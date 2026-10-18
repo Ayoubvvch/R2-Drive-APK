@@ -74,9 +74,10 @@ jobs:
             
             - **Super Fast Native WebView** engine with hardware acceleration.
             - **Permanently Signed**: Compatible with future in-place updates without uninstalling.
-            - **Zero-Knowledge Encryption**: Owner credentials protected with AES-256-GCM.
-            - **In-App Update System**: One-tap "Check for Updates" button to install latest builds.
-            - **Multi-User Vault Support**: Owner master password or custom R2 bucket credentials.
+            - **Seamless Sign In & Sign Up**: Connect directly with R2 credentials; auto-syncs profile metadata (`.r2drive/profile.json`).
+            - **Zero Flicker Startup**: Instant cold boot directly into files list with zero auth screen flash.
+            - **Persistent Session**: Once signed in, never requires logging in again.
+            - **In-App Update System**: Live download progress and automated package installation prompt.
             - **Native Integrations**:
               - Instant offline startup from internal assets.
               - Full Native File Chooser (Upload support).

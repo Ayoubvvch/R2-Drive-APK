@@ -93,8 +93,8 @@
                 <i class="fas fa-times text-xs"></i>
             </button>
             <!-- Account / Vault avatar button -->
-            <button onclick="window.openVaultSheet()" class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition">
-                <i class="fas fa-cloud text-xs"></i>
+            <button onclick="window.openVaultSheet()" id="topAvatarBtn" class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition">
+                <span id="topAvatarInitial">A</span>
             </button>
         </div>
 
@@ -246,12 +246,12 @@
             <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
             <div class="flex items-center justify-between pb-4 border-b border-white/5">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg">
-                        <i class="fas fa-shield-alt"></i>
+                    <div id="vaultSheetAvatar" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-base font-bold shadow-md">
+                        <span id="vaultSheetInitial">A</span>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-white">R2 Cloud Vault</h3>
-                        <p class="text-[11px] text-slate-400" id="vaultOwnerBadge">Owner Account</p>
+                        <h3 class="text-sm font-bold text-white font-['Outfit']" id="vaultSheetName">User Profile</h3>
+                        <p class="text-[11px] text-slate-400" id="vaultOwnerBadge">Connected to R2</p>
                     </div>
                 </div>
                 <div id="statusIndicator" class="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -283,7 +283,7 @@
                 </button>
                 <button onclick="window.closeVaultSheet(); window.resetVaultConfig();" class="w-full py-3 px-4 rounded-xl text-left text-xs font-semibold text-rose-400 active:bg-rose-500/10 flex items-center gap-3 transition">
                     <i class="fas fa-sign-out-alt text-rose-400 text-sm w-5 text-center"></i>
-                    <span>Disconnect / Switch Vault</span>
+                    <span>Sign Out / Disconnect Vault</span>
                 </button>
             </div>
         </div>
@@ -329,90 +329,147 @@
         </div>
     </div>
 
-    <!-- Vault Authentication & Access Control Modal (Zero Knowledge Setup) -->
-    <div id="authModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-        <div class="bg-[#0e0e18] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-left" id="authModalCard">
-            <!-- Step 1: Owner Verification -->
-            <div id="authStepQuestion" class="flex flex-col items-center text-center py-2">
-                <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 shadow-lg shadow-indigo-500/10">
-                    <i class="fas fa-shield-alt text-2xl"></i>
+    <!-- Vault Authentication & Account Setup Modal (Sign In / Sign Up) -->
+    <div id="authModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#0e0e18] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-left max-h-[90vh] overflow-y-auto no-scrollbar" id="authModalCard">
+            <!-- Brand / Header -->
+            <div class="flex flex-col items-center text-center pb-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20 mb-2.5">
+                    <i class="fas fa-cloud"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-1.5 font-['Outfit']">Secure Vault Access</h3>
-                <p class="text-xs text-slate-400 mb-5 max-w-xs">Welcome to R2 Drive. Select your access mode to initialize the vault connection.</p>
-                <div class="p-3 bg-white/[0.02] border border-white/5 rounded-2xl w-full mb-5 text-left">
-                    <p class="text-xs font-semibold text-slate-200">Are you the Owner of this Vault?</p>
-                    <p class="text-[11px] text-slate-400 mt-1">If yes, unlock your cloud storage with your master password.</p>
+                <h3 class="text-lg font-bold text-white font-['Outfit'] tracking-tight">R2 Drive</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Native Cloud Storage for Android</p>
+            </div>
+
+            <!-- Tab Switcher: Sign In / Sign Up -->
+            <div class="flex bg-black/40 p-1 rounded-2xl border border-white/5 mb-4" id="authTabSwitcher">
+                <button type="button" id="tabSignInBtn" onclick="window.switchAuthTab('signin')" class="flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition">
+                    Sign In
+                </button>
+                <button type="button" id="tabSignUpBtn" onclick="window.switchAuthTab('signup')" class="flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition">
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- SIGN IN VIEW -->
+            <div id="authSignInView" class="space-y-3">
+                <p class="text-[11px] text-slate-400 leading-relaxed">Enter your Cloudflare R2 credentials. If a profile already exists in your vault, you will be signed in directly.</p>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint</label>
+                    <input type="text" id="signInEndpoint" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<account-id>.r2.cloudflarestorage.com" autocomplete="off" spellcheck="false">
                 </div>
-                <div class="grid grid-cols-2 gap-2.5 w-full">
-                    <button onclick="window.showOwnerPasswordInput()" class="py-3 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-1.5">
-                        <i class="fas fa-key"></i> Yes, Owner
-                    </button>
-                    <button onclick="window.showPublicR2Config()" class="py-3 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 text-slate-300 hover:text-white font-semibold text-xs transition flex items-center justify-center gap-1.5">
-                        <i class="fas fa-user"></i> Other User
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
+                    <input type="text" id="signInBucket" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. my-vault" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
+                    <input type="text" id="signInAccessKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
+                    <div class="relative">
+                        <input type="password" id="signInSecretKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono pr-9" placeholder="Secret Access Key" autocomplete="off">
+                        <button type="button" onclick="window.togglePasswordVisibility('signInSecretKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <p id="signInError" class="text-[11px] text-rose-400 hidden"></p>
+
+                <div class="pt-1.5">
+                    <button type="button" id="signInSubmitBtn" onclick="window.handleSignIn()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i> Sign In to Drive
                     </button>
                 </div>
             </div>
 
-            <!-- Step 2: Owner Password Input -->
-            <div id="authStepPassword" class="hidden py-1">
-                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                        <i class="fas fa-lock"></i>
-                    </div>
+            <!-- SIGN IN STEP 2: PROFILE SETUP (Prompted if bucket has no profile yet) -->
+            <div id="authProfileSetupView" class="hidden space-y-3">
+                <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center gap-3">
+                    <i class="fas fa-check-circle text-indigo-400 text-base shrink-0"></i>
                     <div>
-                        <h3 class="text-sm font-bold text-white font-['Outfit']">Owner Authentication</h3>
-                        <p class="text-[11px] text-slate-400">Enter master password to unlock R2</p>
+                        <h4 class="text-xs font-bold text-white">R2 Connected</h4>
+                        <p class="text-[10px] text-slate-300">No profile found yet in this bucket. Create your profile name to continue.</p>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Master Password</label>
-                        <input type="password" id="ownerPasswordInput" onkeydown="if(event.key==='Enter') window.unlockOwnerVault()" class="w-full bg-[#050508] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Enter password...">
-                        <p id="ownerPasswordError" class="text-[11px] text-rose-400 mt-1.5 hidden"></p>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Display Name</label>
+                    <input type="text" id="setupDisplayName" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Ayoub">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Avatar Color Theme</label>
+                    <div class="flex items-center gap-2 pt-1" id="setupAvatarColors">
+                        <button type="button" onclick="window.selectAvatarColor('from-blue-600 to-indigo-600', this)" class="avatar-color-btn ring-2 ring-white w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-emerald-500 to-teal-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-purple-500 to-pink-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-amber-500 to-orange-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-rose-500 to-red-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 to-red-600"></button>
                     </div>
-                    <div class="flex gap-2 pt-2">
-                        <button onclick="window.backToAuthQuestion()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
-                        <button onclick="window.unlockOwnerVault()" id="unlockVaultBtn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                            <i class="fas fa-unlock"></i> Unlock Vault
-                        </button>
-                    </div>
+                </div>
+
+                <p id="setupProfileError" class="text-[11px] text-rose-400 hidden"></p>
+
+                <div class="pt-1.5 flex gap-2">
+                    <button type="button" onclick="window.backToSignIn()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
+                    <button type="button" id="setupProfileSubmitBtn" onclick="window.handleCompleteProfile()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-check"></i> Complete & Enter Drive
+                    </button>
                 </div>
             </div>
 
-            <!-- Step 3: Public Custom R2 Config -->
-            <div id="authStepPublic" class="hidden py-1">
-                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                        <i class="fas fa-cloud"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-white font-['Outfit']">Configure Cloudflare R2</h3>
-                        <p class="text-[11px] text-slate-400">Enter your S3/R2 credentials</p>
+            <!-- SIGN UP VIEW -->
+            <div id="authSignUpView" class="hidden space-y-3">
+                <p class="text-[11px] text-slate-400 leading-relaxed">Provide your profile info and Cloudflare R2 credentials in one setup.</p>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Display Name</label>
+                    <input type="text" id="signUpDisplayName" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Ayoub">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Avatar Color Theme</label>
+                    <div class="flex items-center gap-2 pt-1" id="signUpAvatarColors">
+                        <button type="button" onclick="window.selectAvatarColor('from-blue-600 to-indigo-600', this)" class="avatar-color-btn ring-2 ring-white w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-emerald-500 to-teal-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-purple-500 to-pink-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-amber-500 to-orange-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600"></button>
+                        <button type="button" onclick="window.selectAvatarColor('from-rose-500 to-red-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 to-red-600"></button>
                     </div>
                 </div>
-                <div class="space-y-2.5">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint</label>
-                        <input type="text" id="publicEndpointInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<id>.r2.cloudflarestorage.com">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
-                        <input type="text" id="publicBucketInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="my-vault">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
-                        <input type="text" id="publicAccessKeyInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
-                        <input type="password" id="publicSecretKeyInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Secret Access Key">
-                    </div>
-                    <div class="flex gap-2 pt-2">
-                        <button onclick="window.backToAuthQuestion()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
-                        <button onclick="window.savePublicR2Config()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                            <i class="fas fa-check"></i> Connect
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint</label>
+                    <input type="text" id="signUpEndpoint" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<account-id>.r2.cloudflarestorage.com" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
+                    <input type="text" id="signUpBucket" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. my-vault" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
+                    <input type="text" id="signUpAccessKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
+                    <div class="relative">
+                        <input type="password" id="signUpSecretKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono pr-9" placeholder="Secret Access Key" autocomplete="off">
+                        <button type="button" onclick="window.togglePasswordVisibility('signUpSecretKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                            <i class="fas fa-eye"></i>
                         </button>
                     </div>
+                </div>
+
+                <p id="signUpError" class="text-[11px] text-rose-400 hidden"></p>
+
+                <div class="pt-1.5">
+                    <button type="button" id="signUpSubmitBtn" onclick="window.handleSignUp()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-user-plus"></i> Sign Up & Connect
+                    </button>
                 </div>
             </div>
         </div>
@@ -529,7 +586,7 @@
         // ==========================================
         // App Version & In-App Update System
         // ==========================================
-        const APP_CURRENT_VERSION = "1.0.3";
+        const APP_CURRENT_VERSION = "1.0.4";
         let latestUpdateInfo = null;
 
         function compareSemver(v1, v2) {
@@ -671,62 +728,50 @@
         };
 
         // ==========================================
-        // AES-256-GCM Zero-Knowledge Vault Encryption
+        // R2 Vault Client & User Profile Management
         // ==========================================
         let BUCKET_NAME = "";
         let s3 = null;
+        let selectedAvatarColor = 'from-blue-600 to-indigo-600';
+        let userProfile = { name: 'User', avatar: 'from-blue-600 to-indigo-600' };
+        let pendingCreds = null;
 
-        const ENCRYPTED_VAULT_PAYLOAD = {
-            salt: "2BgHRGxQ+/oXVvCaOSKMQQ==",
-            iv: "xVfli08LoSpcKgMu",
-            ciphertext: "N4k9Namn5LMVSSvbMx5tCkGUGXtVrzobZHq2uQNoZYW0jKDEOzM3jajCINk5DRu4H9gn75XiWCfnvFFJpcicdEYieIb4um3BdgwzQfc0ttHXKv0HiFDmUTfN3DlCw9VonhVGz+O58nfPoqHhXdleizYisFv9Jc010VLWZdMmLr7sdAT1Q+qVrbQneZzT2bBJLNPuSlB4bS2kzDdu3+nOL9qCM+1m9jaGDDNEsDH/rmgoQct2fmVo3WYoqDRTV06MyW2qeI/PpAF3FubCBSFwi1PZ2ADuyE/fQJJH9+6mNLsK+jYNT7cJOqVYKDoof4yBdar4cG3YIWYrPAk8EKM="
-        };
-
-        function base64ToUint8(base64) {
-            const binaryString = atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
+        function loadSavedProfile() {
+            try {
+                const stored = localStorage.getItem('r2_profile');
+                if (stored) {
+                    userProfile = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Error reading saved profile", e);
             }
-            return bytes;
+            updateUserProfileUI();
         }
 
-        async function decryptOwnerCredentials(password) {
-            const enc = new TextEncoder();
-            const dec = new TextDecoder();
-            const salt = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.salt);
-            const iv = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.iv);
-            const ciphertext = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.ciphertext);
+        function updateUserProfileUI() {
+            const initial = (userProfile.name || 'U').trim().charAt(0).toUpperCase() || 'U';
+            const color = userProfile.avatar || 'from-blue-600 to-indigo-600';
 
-            const pwKey = await crypto.subtle.importKey(
-                "raw",
-                enc.encode(password),
-                "PBKDF2",
-                false,
-                ["deriveKey"]
-            );
+            // Update top bar avatar
+            const topBtn = document.getElementById('topAvatarBtn');
+            const topInitial = document.getElementById('topAvatarInitial');
+            if (topInitial) topInitial.textContent = initial;
+            if (topBtn) {
+                topBtn.className = `w-8 h-8 rounded-full bg-gradient-to-tr ${color} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition`;
+            }
 
-            const key = await crypto.subtle.deriveKey(
-                {
-                    name: "PBKDF2",
-                    salt: salt,
-                    iterations: 100000,
-                    hash: "SHA-256"
-                },
-                pwKey,
-                { name: "AES-GCM", length: 256 },
-                false,
-                ["decrypt"]
-            );
+            // Update vault bottom sheet
+            const sheetAvatar = document.getElementById('vaultSheetAvatar');
+            const sheetInitial = document.getElementById('vaultSheetInitial');
+            const sheetName = document.getElementById('vaultSheetName');
+            const ownerBadge = document.getElementById('vaultOwnerBadge');
 
-            const decrypted = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: iv },
-                key,
-                ciphertext
-            );
-
-            return JSON.parse(dec.decode(decrypted));
+            if (sheetAvatar) {
+                sheetAvatar.className = `w-11 h-11 rounded-2xl bg-gradient-to-tr ${color} flex items-center justify-center text-white text-base font-bold shadow-md`;
+            }
+            if (sheetInitial) sheetInitial.textContent = initial;
+            if (sheetName) sheetName.textContent = userProfile.name || 'User Profile';
+            if (ownerBadge) ownerBadge.textContent = 'Active R2 Vault';
         }
 
         function initR2Client(config) {
@@ -745,103 +790,272 @@
             const bucketStat = document.getElementById('bucketNameStat');
             if (bucketStat) bucketStat.textContent = BUCKET_NAME;
 
-            const isOwner = localStorage.getItem('r2_is_owner') === 'true';
-            const ownerBadge = document.getElementById('vaultOwnerBadge');
-            if (ownerBadge) {
-                ownerBadge.textContent = isOwner ? 'Owner Vault' : 'Custom R2 Vault';
-            }
-
+            updateUserProfileUI();
             fetchFiles();
         }
 
-        // Auth Modal Handlers
-        window.showOwnerPasswordInput = function() {
-            document.getElementById('authStepQuestion').classList.add('hidden');
-            document.getElementById('authStepPublic').classList.add('hidden');
-            const stepPass = document.getElementById('authStepPassword');
-            stepPass.classList.remove('hidden');
-            const passInput = document.getElementById('ownerPasswordInput');
-            passInput.value = '';
-            document.getElementById('ownerPasswordError').classList.add('hidden');
-            setTimeout(() => passInput.focus(), 100);
+        // ==========================================
+        // Auth / Sign In / Sign Up Handlers
+        // ==========================================
+        window.switchAuthTab = function(tab) {
+            const tabSignInBtn = document.getElementById('tabSignInBtn');
+            const tabSignUpBtn = document.getElementById('tabSignUpBtn');
+            const signInView = document.getElementById('authSignInView');
+            const signUpView = document.getElementById('authSignUpView');
+            const profileSetupView = document.getElementById('authProfileSetupView');
+
+            if (profileSetupView) profileSetupView.classList.add('hidden');
+
+            if (tab === 'signin') {
+                tabSignInBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition";
+                tabSignUpBtn.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition";
+                signInView.classList.remove('hidden');
+                signUpView.classList.add('hidden');
+            } else {
+                tabSignUpBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition";
+                tabSignInBtn.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition";
+                signUpView.classList.remove('hidden');
+                signInView.classList.add('hidden');
+            }
         };
 
-        window.showPublicR2Config = function() {
-            document.getElementById('authStepQuestion').classList.add('hidden');
-            document.getElementById('authStepPassword').classList.add('hidden');
-            document.getElementById('authStepPublic').classList.remove('hidden');
+        window.togglePasswordVisibility = function(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            const icon = btnEl.querySelector('i');
+            if (icon) {
+                icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+            }
         };
 
-        window.backToAuthQuestion = function() {
-            document.getElementById('authStepPassword').classList.add('hidden');
-            document.getElementById('authStepPublic').classList.add('hidden');
-            document.getElementById('authStepQuestion').classList.remove('hidden');
+        window.selectAvatarColor = function(colorClass, btnEl) {
+            selectedAvatarColor = colorClass;
+            const parent = btnEl.parentElement;
+            if (parent) {
+                parent.querySelectorAll('.avatar-color-btn').forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-white');
+                });
+            }
+            btnEl.classList.add('ring-2', 'ring-white');
         };
 
-        window.unlockOwnerVault = async function() {
-            const passInput = document.getElementById('ownerPasswordInput');
-            const errorText = document.getElementById('ownerPasswordError');
-            const unlockBtn = document.getElementById('unlockVaultBtn');
-            const password = passInput.value.trim();
+        window.backToSignIn = function() {
+            document.getElementById('authProfileSetupView').classList.add('hidden');
+            document.getElementById('authTabSwitcher').classList.remove('hidden');
+            document.getElementById('authSignInView').classList.remove('hidden');
+        };
 
-            if (!password) {
-                errorText.textContent = "Please enter your master password.";
-                errorText.classList.remove('hidden');
+        window.handleSignIn = async function() {
+            const endpoint = document.getElementById('signInEndpoint').value.trim();
+            const bucketName = document.getElementById('signInBucket').value.trim();
+            const accessKeyId = document.getElementById('signInAccessKey').value.trim();
+            const secretAccessKey = document.getElementById('signInSecretKey').value.trim();
+            const errorEl = document.getElementById('signInError');
+            const btn = document.getElementById('signInSubmitBtn');
+
+            if (!endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
+                errorEl.textContent = 'Please fill in all R2 connection fields.';
+                errorEl.classList.remove('hidden');
                 return;
             }
 
-            unlockBtn.disabled = true;
-            unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Decrypting...';
-            errorText.classList.add('hidden');
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to R2...';
+
+            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
 
             try {
-                const creds = await decryptOwnerCredentials(password);
-                if (!creds || !creds.bucketName || !creds.accessKeyId) {
-                    throw new Error("Invalid credentials payload");
+                const testS3 = new AWS.S3({
+                    endpoint: new AWS.Endpoint(endpoint),
+                    accessKeyId: accessKeyId,
+                    secretAccessKey: secretAccessKey,
+                    region: 'auto',
+                    signatureVersion: 'v4',
+                    s3ForcePathStyle: true
+                });
+
+                // Test connection
+                await testS3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
+
+                // Check for .r2drive/profile.json in the bucket
+                let profileFound = false;
+                try {
+                    const profileObj = await testS3.getObject({
+                        Bucket: bucketName,
+                        Key: '.r2drive/profile.json'
+                    }).promise();
+
+                    const parsed = JSON.parse(profileObj.Body.toString('utf-8'));
+                    if (parsed && parsed.name) {
+                        userProfile = {
+                            name: parsed.name,
+                            avatar: parsed.avatar || 'from-blue-600 to-indigo-600'
+                        };
+                        localStorage.setItem('r2_profile', JSON.stringify(userProfile));
+                        profileFound = true;
+                    }
+                } catch (profErr) {
+                    // Profile does not exist yet in this bucket
+                    profileFound = false;
                 }
 
-                // Remember credentials permanently on this device
+                if (profileFound) {
+                    // Direct login: save session permanently
+                    localStorage.setItem('r2_credentials', JSON.stringify(creds));
+                    document.getElementById('authModal').classList.add('hidden');
+                    initR2Client(creds);
+                    showToast(`Welcome back, ${userProfile.name}!`, 'success');
+                } else {
+                    // Transition to step 2 to configure user profile name
+                    pendingCreds = creds;
+                    document.getElementById('authSignInView').classList.add('hidden');
+                    document.getElementById('authTabSwitcher').classList.add('hidden');
+                    document.getElementById('authProfileSetupView').classList.remove('hidden');
+                    setTimeout(() => {
+                        const nameInput = document.getElementById('setupDisplayName');
+                        if (nameInput) nameInput.focus();
+                    }, 100);
+                }
+            } catch (err) {
+                console.error('Sign In error:', err);
+                errorEl.textContent = 'Connection failed: ' + (err.message || 'Invalid R2 credentials or bucket name.');
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In to Drive';
+            }
+        };
+
+        window.handleCompleteProfile = async function() {
+            if (!pendingCreds) return;
+            const nameInput = document.getElementById('setupDisplayName');
+            const errorEl = document.getElementById('setupProfileError');
+            const btn = document.getElementById('setupProfileSubmitBtn');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                errorEl.textContent = 'Please enter your display name.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving profile...';
+
+            try {
+                const testS3 = new AWS.S3({
+                    endpoint: new AWS.Endpoint(pendingCreds.endpoint),
+                    accessKeyId: pendingCreds.accessKeyId,
+                    secretAccessKey: pendingCreds.secretAccessKey,
+                    region: 'auto',
+                    signatureVersion: 'v4',
+                    s3ForcePathStyle: true
+                });
+
+                userProfile = {
+                    name: name,
+                    avatar: selectedAvatarColor || 'from-blue-600 to-indigo-600',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Save profile to R2 bucket .r2drive/profile.json
+                await testS3.putObject({
+                    Bucket: pendingCreds.bucketName,
+                    Key: '.r2drive/profile.json',
+                    Body: JSON.stringify(userProfile),
+                    ContentType: 'application/json'
+                }).promise();
+
+                // Save credentials and profile permanently
+                localStorage.setItem('r2_credentials', JSON.stringify(pendingCreds));
+                localStorage.setItem('r2_profile', JSON.stringify(userProfile));
+
+                document.getElementById('authModal').classList.add('hidden');
+                initR2Client(pendingCreds);
+                showToast(`Welcome to R2 Drive, ${userProfile.name}!`, 'success');
+            } catch (err) {
+                console.error('Failed to save profile:', err);
+                errorEl.textContent = 'Failed to save profile: ' + (err.message || 'Error writing to bucket.');
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Complete & Enter Drive';
+            }
+        };
+
+        window.handleSignUp = async function() {
+            const name = document.getElementById('signUpDisplayName').value.trim();
+            const endpoint = document.getElementById('signUpEndpoint').value.trim();
+            const bucketName = document.getElementById('signUpBucket').value.trim();
+            const accessKeyId = document.getElementById('signUpAccessKey').value.trim();
+            const secretAccessKey = document.getElementById('signUpSecretKey').value.trim();
+            const errorEl = document.getElementById('signUpError');
+            const btn = document.getElementById('signUpSubmitBtn');
+
+            if (!name || !endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
+                errorEl.textContent = 'Please enter your name and all R2 credentials.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating profile & connecting...';
+
+            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
+
+            try {
+                const testS3 = new AWS.S3({
+                    endpoint: new AWS.Endpoint(endpoint),
+                    accessKeyId: accessKeyId,
+                    secretAccessKey: secretAccessKey,
+                    region: 'auto',
+                    signatureVersion: 'v4',
+                    s3ForcePathStyle: true
+                });
+
+                // Test connection
+                await testS3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
+
+                userProfile = {
+                    name: name,
+                    avatar: selectedAvatarColor || 'from-blue-600 to-indigo-600',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Store profile inside the R2 bucket .r2drive/profile.json
+                await testS3.putObject({
+                    Bucket: bucketName,
+                    Key: '.r2drive/profile.json',
+                    Body: JSON.stringify(userProfile),
+                    ContentType: 'application/json'
+                }).promise();
+
+                // Save permanently
                 localStorage.setItem('r2_credentials', JSON.stringify(creds));
-                localStorage.setItem('r2_is_owner', 'true');
+                localStorage.setItem('r2_profile', JSON.stringify(userProfile));
 
                 document.getElementById('authModal').classList.add('hidden');
                 initR2Client(creds);
-                showToast('Vault unlocked successfully!', 'success');
+                showToast(`Account created! Welcome, ${userProfile.name}!`, 'success');
             } catch (err) {
-                console.error("Owner decryption failed:", err);
-                errorText.textContent = "Incorrect password. Access denied.";
-                errorText.classList.remove('hidden');
-                showToast('Invalid Owner Password!', 'error');
+                console.error('Sign Up error:', err);
+                errorEl.textContent = 'Connection failed: ' + (err.message || 'Invalid R2 credentials or bucket name.');
+                errorEl.classList.remove('hidden');
             } finally {
-                unlockBtn.disabled = false;
-                unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock Vault';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up & Connect';
             }
-        };
-
-        window.savePublicR2Config = function() {
-            const endpoint = document.getElementById('publicEndpointInput').value.trim();
-            const bucketName = document.getElementById('publicBucketInput').value.trim();
-            const accessKeyId = document.getElementById('publicAccessKeyInput').value.trim();
-            const secretAccessKey = document.getElementById('publicSecretKeyInput').value.trim();
-
-            if (!endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
-                showToast('Please fill in all Cloudflare R2 fields.', 'error');
-                return;
-            }
-
-            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
-            localStorage.setItem('r2_credentials', JSON.stringify(creds));
-            localStorage.setItem('r2_is_owner', 'false');
-
-            document.getElementById('authModal').classList.add('hidden');
-            initR2Client(creds);
-            showToast('R2 connection saved!', 'success');
         };
 
         window.resetVaultConfig = function() {
-            if (confirm("Disconnect and clear saved R2 credentials from this device?")) {
+            if (confirm("Sign out and disconnect this vault from this device?")) {
                 localStorage.removeItem('r2_credentials');
-                localStorage.removeItem('r2_is_owner');
+                localStorage.removeItem('r2_profile');
                 location.reload();
             }
         };
@@ -1199,7 +1413,7 @@
             let totalFilesCount = 0;
 
             allFiles.forEach(f => {
-                if (!f.Key.endsWith('/')) {
+                if (!f.Key.startsWith('.r2drive/') && !f.Key.endsWith('/')) {
                     totalBytes += f.Size || 0;
                     totalFilesCount++;
                 }
@@ -1227,7 +1441,7 @@
             if (query !== '') {
                 // Search across all files in vault
                 items = allFiles.filter(file => {
-                    return !file.Key.endsWith('/') && file.Key.toLowerCase().includes(query);
+                    return !file.Key.startsWith('.r2drive/') && !file.Key.endsWith('/') && file.Key.toLowerCase().includes(query);
                 }).map(file => ({
                     Key: file.Key,
                     Name: file.Key.split('/').pop(),
@@ -1241,6 +1455,7 @@
 
                 allFiles.forEach(file => {
                     const key = file.Key;
+                    if (key.startsWith('.r2drive/')) return;
                     if (key.startsWith(currentPath) && key !== currentPath) {
                         const relative = key.substring(currentPath.length);
                         const slashIdx = relative.indexOf('/');
@@ -1791,20 +2006,22 @@
         }
 
         // ==========================================
-        // App Startup Initialization
+        // App Startup Initialization (Zero Flicker)
         // ==========================================
+        loadSavedProfile();
+
         const savedVaultCreds = localStorage.getItem('r2_credentials');
         if (savedVaultCreds) {
             try {
                 const config = JSON.parse(savedVaultCreds);
-                document.getElementById('authModal').classList.add('hidden');
+                // Auth modal is hidden by default in HTML markup -> 0ms flicker
                 initR2Client(config);
             } catch (e) {
                 console.error("Failed to parse credentials", e);
                 document.getElementById('authModal').classList.remove('hidden');
             }
         } else {
-            // First time launch: Prompt Owner verification
+            // First time launch: show Sign In / Sign Up modal
             document.getElementById('authModal').classList.remove('hidden');
         }
 

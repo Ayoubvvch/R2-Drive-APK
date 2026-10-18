@@ -23,10 +23,11 @@ A lightweight, high-performance Native Android application engineered to deliver
    - Signed with a persistent 2048-bit RSA key valid until **March 5, 2054**.
    - Supports **V1, V2, V3, and V4** APK signing schemes.
    - All future updates install over previous versions without signature conflicts or uninstalling.
-5. **Zero-Knowledge Encrypted Vault**:
-   - Credentials encrypted with **AES-256-GCM** using the owner master password.
-   - First launch asks: *"Are you the Owner?"* -> enter password once, remembered permanently.
-   - Public users can connect their own Cloudflare R2 bucket.
+5. **Modern Sign In / Sign Up & Cloud Profile Sync**:
+   - **Sign In**: Connect directly with Cloudflare R2 credentials. If a profile is found in `.r2drive/profile.json`, it automatically loads and signs in immediately.
+   - **Sign Up**: Set your display name, avatar theme, and R2 credentials in one setup, automatically provisioning your profile into your bucket.
+   - **Zero Flicker Cold Boot**: The app checks your local session synchronously with zero flash or modal flicker.
+   - **Persistent Session**: Never prompts for credentials again once signed in.
 
 ---
 
