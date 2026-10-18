@@ -74,7 +74,9 @@ jobs:
             
             - **Super Fast Native WebView** engine with hardware acceleration.
             - **Permanently Signed**: Compatible with future in-place updates without uninstalling.
-            - **Seamless Sign In & Sign Up**: Connect directly with R2 credentials; auto-syncs profile metadata (`.r2drive/profile.json`).
+            - **Simplified 2-Key Auth**: Only requires Access Key ID and Secret Access Key; automatically discovers buckets.
+            - **Bucket Selector & Switcher**: Choose any bucket in your account and switch between them anytime.
+            - **Custom Photo Profile**: Upload your personal profile picture directly from your device into the top Google Drive bar.
             - **Zero Flicker Startup**: Instant cold boot directly into files list with zero auth screen flash.
             - **Persistent Session**: Once signed in, never requires logging in again.
             - **In-App Update System**: Live download progress and automated package installation prompt.

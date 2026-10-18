@@ -23,11 +23,13 @@ A lightweight, high-performance Native Android application engineered to deliver
    - Signed with a persistent 2048-bit RSA key valid until **March 5, 2054**.
    - Supports **V1, V2, V3, and V4** APK signing schemes.
    - All future updates install over previous versions without signature conflicts or uninstalling.
-5. **Modern Sign In / Sign Up & Cloud Profile Sync**:
-   - **Sign In**: Connect directly with Cloudflare R2 credentials. If a profile is found in `.r2drive/profile.json`, it automatically loads and signs in immediately.
-   - **Sign Up**: Set your display name, avatar theme, and R2 credentials in one setup, automatically provisioning your profile into your bucket.
-   - **Zero Flicker Cold Boot**: The app checks your local session synchronously with zero flash or modal flicker.
-   - **Persistent Session**: Never prompts for credentials again once signed in.
+5. **Simplified 2-Key Auth, Dynamic Bucket Discovery & Photo Profiles**:
+   - **Only 2 Fields Required**: Just enter your **Access Key ID** and **Secret Access Key** (with Admin Read & Write access).
+   - **Automatic Bucket Discovery**: Scans your Cloudflare R2 account via `s3.listBuckets()` and allows choosing any bucket as your Drive.
+   - **Personal Photo Upload**: Upload your real profile picture directly from your device, rendered cleanly in the top Google Drive search bar.
+   - **Bucket & Profile Management**: Switch buckets or edit your photo/name anytime from the Vault sheet.
+   - **Zero Flicker Cold Boot**: Synchronous local session check ensures 0ms delay on startup.
+   - **Persistent Session**: Never prompts for credentials again once connected.
 
 ---
 

@@ -93,7 +93,8 @@
                 <i class="fas fa-times text-xs"></i>
             </button>
             <!-- Account / Vault avatar button -->
-            <button onclick="window.openVaultSheet()" id="topAvatarBtn" class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition">
+            <button onclick="window.openVaultSheet()" id="topAvatarBtn" class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition overflow-hidden p-0 border border-white/10">
+                <img id="topAvatarImg" src="" alt="Profile" class="w-full h-full object-cover hidden">
                 <span id="topAvatarInitial">A</span>
             </button>
         </div>
@@ -246,7 +247,8 @@
             <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
             <div class="flex items-center justify-between pb-4 border-b border-white/5">
                 <div class="flex items-center gap-3">
-                    <div id="vaultSheetAvatar" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-base font-bold shadow-md">
+                    <div id="vaultSheetAvatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-base font-bold shadow-md overflow-hidden border border-white/10 p-0">
+                        <img id="vaultSheetImg" src="" alt="Profile" class="w-full h-full object-cover hidden">
                         <span id="vaultSheetInitial">A</span>
                     </div>
                     <div>
@@ -277,8 +279,16 @@
 
             <!-- Actions -->
             <div class="pt-3 space-y-1.5">
+                <button onclick="window.closeVaultSheet(); window.openEditProfileModal();" class="w-full py-3 px-4 rounded-xl text-left text-xs font-semibold text-slate-200 active:bg-white/5 flex items-center gap-3 transition">
+                    <i class="fas fa-user-circle text-indigo-400 text-sm w-5 text-center"></i>
+                    <span>Edit Profile & Photo</span>
+                </button>
+                <button onclick="window.closeVaultSheet(); window.openBucketSwitcher();" class="w-full py-3 px-4 rounded-xl text-left text-xs font-semibold text-slate-200 active:bg-white/5 flex items-center gap-3 transition">
+                    <i class="fas fa-database text-amber-400 text-sm w-5 text-center"></i>
+                    <span>Switch Bucket</span>
+                </button>
                 <button onclick="window.closeVaultSheet(); window.checkForUpdates(true);" class="w-full py-3 px-4 rounded-xl text-left text-xs font-semibold text-slate-200 active:bg-white/5 flex items-center gap-3 transition">
-                    <i class="fas fa-sync-alt text-indigo-400 text-sm w-5 text-center"></i>
+                    <i class="fas fa-sync-alt text-blue-400 text-sm w-5 text-center"></i>
                     <span>Check for Updates</span>
                 </button>
                 <button onclick="window.closeVaultSheet(); window.resetVaultConfig();" class="w-full py-3 px-4 rounded-xl text-left text-xs font-semibold text-rose-400 active:bg-rose-500/10 flex items-center gap-3 transition">
@@ -329,146 +339,124 @@
         </div>
     </div>
 
-    <!-- Vault Authentication & Account Setup Modal (Sign In / Sign Up) -->
+    <!-- Vault Authentication & Account Setup Modal (3 Stages) -->
     <div id="authModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-[#0e0e18] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-left max-h-[90vh] overflow-y-auto no-scrollbar" id="authModalCard">
             <!-- Brand / Header -->
             <div class="flex flex-col items-center text-center pb-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20 mb-2.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20 mb-2">
                     <i class="fas fa-cloud"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white font-['Outfit'] tracking-tight">R2 Drive</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Native Cloud Storage for Android</p>
+                <h3 class="text-lg font-bold text-white font-['Outfit'] tracking-tight" id="authModalTitle">Connect R2 Drive</h3>
+                <p class="text-xs text-slate-400 mt-0.5" id="authModalSubtitle">Ultra-fast Cloud Storage for Android</p>
             </div>
 
-            <!-- Tab Switcher: Sign In / Sign Up -->
-            <div class="flex bg-black/40 p-1 rounded-2xl border border-white/5 mb-4" id="authTabSwitcher">
-                <button type="button" id="tabSignInBtn" onclick="window.switchAuthTab('signin')" class="flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition">
-                    Sign In
-                </button>
-                <button type="button" id="tabSignUpBtn" onclick="window.switchAuthTab('signup')" class="flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition">
-                    Sign Up
-                </button>
-            </div>
-
-            <!-- SIGN IN VIEW -->
-            <div id="authSignInView" class="space-y-3">
-                <p class="text-[11px] text-slate-400 leading-relaxed">Enter your Cloudflare R2 credentials. If a profile already exists in your vault, you will be signed in directly.</p>
-
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint</label>
-                    <input type="text" id="signInEndpoint" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<account-id>.r2.cloudflarestorage.com" autocomplete="off" spellcheck="false">
+            <!-- STAGE 1: CREDENTIALS (ONLY 2 FIELDS) -->
+            <div id="authStageCreds" class="space-y-3">
+                <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center gap-2.5">
+                    <i class="fas fa-key text-indigo-400 text-sm shrink-0"></i>
+                    <p class="text-[11px] text-slate-300 leading-snug">Enter your R2 API keys with <strong>Admin Read & Write</strong> access. The app will automatically discover your buckets.</p>
                 </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
-                    <input type="text" id="signInBucket" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. my-vault" autocomplete="off" spellcheck="false">
-                </div>
+
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
-                    <input type="text" id="signInAccessKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID" autocomplete="off" spellcheck="false">
+                    <input type="text" id="authAccessKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. d1fc280a9699258034101a4df1da8d02" autocomplete="off" spellcheck="false">
                 </div>
+
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
                     <div class="relative">
-                        <input type="password" id="signInSecretKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono pr-9" placeholder="Secret Access Key" autocomplete="off">
-                        <button type="button" onclick="window.togglePasswordVisibility('signInSecretKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                        <input type="password" id="authSecretKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono pr-9" placeholder="Secret Access Key" autocomplete="off">
+                        <button type="button" onclick="window.togglePasswordVisibility('authSecretKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <p id="signInError" class="text-[11px] text-rose-400 hidden"></p>
+                <!-- Advanced toggle for custom endpoint -->
+                <div>
+                    <button type="button" onclick="document.getElementById('authAdvancedSettings').classList.toggle('hidden')" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 pt-1">
+                        <i class="fas fa-cog text-[10px]"></i> Advanced: Endpoint / Account ID
+                    </button>
+                    <div id="authAdvancedSettings" class="hidden mt-2 p-2.5 bg-black/40 rounded-xl border border-white/5 space-y-1">
+                        <label class="block text-[10px] text-slate-400 font-medium">Cloudflare R2 Endpoint</label>
+                        <input type="text" id="authEndpoint" class="w-full bg-[#050508] border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none focus:border-indigo-500 font-mono" value="https://5d0d1d468b161e84470798a691e7b5b9.r2.cloudflarestorage.com" placeholder="https://<id>.r2.cloudflarestorage.com">
+                    </div>
+                </div>
 
-                <div class="pt-1.5">
-                    <button type="button" id="signInSubmitBtn" onclick="window.handleSignIn()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-sign-in-alt"></i> Sign In to Drive
+                <p id="authCredsError" class="text-[11px] text-rose-400 hidden"></p>
+
+                <div class="pt-2">
+                    <button type="button" id="authConnectBtn" onclick="window.handleConnectAndListBuckets()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-plug"></i> Connect & Discover Buckets
                     </button>
                 </div>
             </div>
 
-            <!-- SIGN IN STEP 2: PROFILE SETUP (Prompted if bucket has no profile yet) -->
-            <div id="authProfileSetupView" class="hidden space-y-3">
-                <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center gap-3">
-                    <i class="fas fa-check-circle text-indigo-400 text-base shrink-0"></i>
+            <!-- STAGE 2: BUCKET SELECTOR -->
+            <div id="authStageBuckets" class="hidden space-y-3">
+                <div class="flex items-center gap-2 pb-1">
+                    <button type="button" onclick="window.backToCreds()" id="bucketBackBtn" class="text-slate-400 hover:text-white text-xs p-1">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
                     <div>
-                        <h4 class="text-xs font-bold text-white">R2 Connected</h4>
-                        <p class="text-[10px] text-slate-300">No profile found yet in this bucket. Create your profile name to continue.</p>
+                        <h4 class="text-xs font-bold text-white">Select Drive Bucket</h4>
+                        <p class="text-[10px] text-slate-400">Choose which bucket to use for your files</p>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Display Name</label>
-                    <input type="text" id="setupDisplayName" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Ayoub">
+                <div id="bucketCardsContainer" class="space-y-2 max-h-52 overflow-y-auto no-scrollbar py-1">
+                    <!-- Populated dynamically with radio cards -->
                 </div>
 
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Avatar Color Theme</label>
-                    <div class="flex items-center gap-2 pt-1" id="setupAvatarColors">
-                        <button type="button" onclick="window.selectAvatarColor('from-blue-600 to-indigo-600', this)" class="avatar-color-btn ring-2 ring-white w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-emerald-500 to-teal-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-purple-500 to-pink-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-amber-500 to-orange-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-rose-500 to-red-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 to-red-600"></button>
-                    </div>
-                </div>
+                <p id="authBucketError" class="text-[11px] text-rose-400 hidden"></p>
 
-                <p id="setupProfileError" class="text-[11px] text-rose-400 hidden"></p>
-
-                <div class="pt-1.5 flex gap-2">
-                    <button type="button" onclick="window.backToSignIn()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
-                    <button type="button" id="setupProfileSubmitBtn" onclick="window.handleCompleteProfile()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-check"></i> Complete & Enter Drive
+                <div class="pt-2 flex gap-2">
+                    <button type="button" id="authBucketCancelBtn" onclick="window.backToCreds()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
+                    <button type="button" id="authSelectBucketBtn" onclick="window.handleSelectBucketAndProceed()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-check"></i> Use This Bucket
                     </button>
                 </div>
             </div>
 
-            <!-- SIGN UP VIEW -->
-            <div id="authSignUpView" class="hidden space-y-3">
-                <p class="text-[11px] text-slate-400 leading-relaxed">Provide your profile info and Cloudflare R2 credentials in one setup.</p>
+            <!-- STAGE 3: PROFILE SETUP (PHOTO & NAME) -->
+            <div id="authStageProfile" class="hidden space-y-3">
+                <div class="text-center pb-1">
+                    <h4 class="text-xs font-bold text-white" id="profileStageTitle">Customize Your Profile</h4>
+                    <p class="text-[10px] text-slate-400" id="profileStageSubtitle">Add your photo and name for a professional Google Drive look</p>
+                </div>
+
+                <!-- Hidden file input for avatar picture -->
+                <input type="file" id="avatarImageInput" accept="image/*" class="hidden" onchange="window.handleAvatarFileChosen(this)">
+
+                <!-- Interactive Profile Picture Circle -->
+                <div class="flex flex-col items-center justify-center pt-1">
+                    <div onclick="document.getElementById('avatarImageInput').click()" class="relative w-20 h-20 rounded-full border-2 border-indigo-500/40 bg-slate-800 hover:border-indigo-400 cursor-pointer shadow-xl flex items-center justify-center overflow-hidden group transition">
+                        <img id="avatarPreviewImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                        <div id="avatarPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-400 transition">
+                            <i class="fas fa-camera text-xl mb-1"></i>
+                            <span class="text-[9px] font-semibold uppercase tracking-wider">Add Photo</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                            <i class="fas fa-pencil-alt"></i>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('avatarImageInput').click()" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold mt-2">
+                        Upload Profile Picture
+                    </button>
+                </div>
 
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-300 mb-1">Display Name</label>
-                    <input type="text" id="signUpDisplayName" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Ayoub">
+                    <input type="text" id="profileNameInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Ayoub">
                 </div>
 
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Avatar Color Theme</label>
-                    <div class="flex items-center gap-2 pt-1" id="signUpAvatarColors">
-                        <button type="button" onclick="window.selectAvatarColor('from-blue-600 to-indigo-600', this)" class="avatar-color-btn ring-2 ring-white w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-emerald-500 to-teal-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-purple-500 to-pink-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-amber-500 to-orange-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600"></button>
-                        <button type="button" onclick="window.selectAvatarColor('from-rose-500 to-red-600', this)" class="avatar-color-btn w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 to-red-600"></button>
-                    </div>
-                </div>
+                <p id="authProfileError" class="text-[11px] text-rose-400 hidden"></p>
 
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint</label>
-                    <input type="text" id="signUpEndpoint" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<account-id>.r2.cloudflarestorage.com" autocomplete="off" spellcheck="false">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
-                    <input type="text" id="signUpBucket" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. my-vault" autocomplete="off" spellcheck="false">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
-                    <input type="text" id="signUpAccessKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID" autocomplete="off" spellcheck="false">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
-                    <div class="relative">
-                        <input type="password" id="signUpSecretKey" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono pr-9" placeholder="Secret Access Key" autocomplete="off">
-                        <button type="button" onclick="window.togglePasswordVisibility('signUpSecretKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <p id="signUpError" class="text-[11px] text-rose-400 hidden"></p>
-
-                <div class="pt-1.5">
-                    <button type="button" id="signUpSubmitBtn" onclick="window.handleSignUp()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-user-plus"></i> Sign Up & Connect
+                <div class="pt-2 flex gap-2">
+                    <button type="button" id="authProfileBackBtn" onclick="window.backToBucketSelect()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
+                    <button type="button" id="authSaveProfileBtn" onclick="window.handleSaveProfileAndEnter()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-check"></i> Save & Enter Drive
                     </button>
                 </div>
             </div>
@@ -586,7 +574,7 @@
         // ==========================================
         // App Version & In-App Update System
         // ==========================================
-        const APP_CURRENT_VERSION = "1.0.4";
+        const APP_CURRENT_VERSION = "1.0.5";
         let latestUpdateInfo = null;
 
         function compareSemver(v1, v2) {
@@ -732,15 +720,19 @@
         // ==========================================
         let BUCKET_NAME = "";
         let s3 = null;
-        let selectedAvatarColor = 'from-blue-600 to-indigo-600';
-        let userProfile = { name: 'User', avatar: 'from-blue-600 to-indigo-600' };
+        let userProfile = { name: 'User', avatarUrl: '' };
         let pendingCreds = null;
+        let cachedBuckets = [];
+        let currentAvatarDataUrl = '';
+        let isEditProfileMode = false;
+        let isSwitchBucketMode = false;
 
         function loadSavedProfile() {
             try {
                 const stored = localStorage.getItem('r2_profile');
                 if (stored) {
                     userProfile = JSON.parse(stored);
+                    currentAvatarDataUrl = userProfile.avatarUrl || '';
                 }
             } catch (e) {
                 console.error("Error reading saved profile", e);
@@ -749,29 +741,51 @@
         }
 
         function updateUserProfileUI() {
-            const initial = (userProfile.name || 'U').trim().charAt(0).toUpperCase() || 'U';
-            const color = userProfile.avatar || 'from-blue-600 to-indigo-600';
+            const name = (userProfile.name || 'User').trim();
+            const initial = name.charAt(0).toUpperCase() || 'U';
+            const avatarUrl = userProfile.avatarUrl || '';
 
-            // Update top bar avatar
+            // Update Top App Bar Avatar
             const topBtn = document.getElementById('topAvatarBtn');
+            const topImg = document.getElementById('topAvatarImg');
             const topInitial = document.getElementById('topAvatarInitial');
-            if (topInitial) topInitial.textContent = initial;
-            if (topBtn) {
-                topBtn.className = `w-8 h-8 rounded-full bg-gradient-to-tr ${color} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition`;
+
+            if (avatarUrl) {
+                if (topImg) {
+                    topImg.src = avatarUrl;
+                    topImg.classList.remove('hidden');
+                }
+                if (topInitial) topInitial.classList.add('hidden');
+            } else {
+                if (topImg) topImg.classList.add('hidden');
+                if (topInitial) {
+                    topInitial.textContent = initial;
+                    topInitial.classList.remove('hidden');
+                }
             }
 
-            // Update vault bottom sheet
-            const sheetAvatar = document.getElementById('vaultSheetAvatar');
+            // Update Vault Bottom Sheet
+            const sheetImg = document.getElementById('vaultSheetImg');
             const sheetInitial = document.getElementById('vaultSheetInitial');
             const sheetName = document.getElementById('vaultSheetName');
             const ownerBadge = document.getElementById('vaultOwnerBadge');
 
-            if (sheetAvatar) {
-                sheetAvatar.className = `w-11 h-11 rounded-2xl bg-gradient-to-tr ${color} flex items-center justify-center text-white text-base font-bold shadow-md`;
+            if (avatarUrl) {
+                if (sheetImg) {
+                    sheetImg.src = avatarUrl;
+                    sheetImg.classList.remove('hidden');
+                }
+                if (sheetInitial) sheetInitial.classList.add('hidden');
+            } else {
+                if (sheetImg) sheetImg.classList.add('hidden');
+                if (sheetInitial) {
+                    sheetInitial.textContent = initial;
+                    sheetInitial.classList.remove('hidden');
+                }
             }
-            if (sheetInitial) sheetInitial.textContent = initial;
-            if (sheetName) sheetName.textContent = userProfile.name || 'User Profile';
-            if (ownerBadge) ownerBadge.textContent = 'Active R2 Vault';
+
+            if (sheetName) sheetName.textContent = name;
+            if (ownerBadge) ownerBadge.textContent = 'Drive: ' + (BUCKET_NAME || 'Active');
         }
 
         function initR2Client(config) {
@@ -795,30 +809,8 @@
         }
 
         // ==========================================
-        // Auth / Sign In / Sign Up Handlers
+        // Auth / Bucket Discovery / Profile Handlers
         // ==========================================
-        window.switchAuthTab = function(tab) {
-            const tabSignInBtn = document.getElementById('tabSignInBtn');
-            const tabSignUpBtn = document.getElementById('tabSignUpBtn');
-            const signInView = document.getElementById('authSignInView');
-            const signUpView = document.getElementById('authSignUpView');
-            const profileSetupView = document.getElementById('authProfileSetupView');
-
-            if (profileSetupView) profileSetupView.classList.add('hidden');
-
-            if (tab === 'signin') {
-                tabSignInBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition";
-                tabSignUpBtn.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition";
-                signInView.classList.remove('hidden');
-                signUpView.classList.add('hidden');
-            } else {
-                tabSignUpBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 shadow-sm transition";
-                tabSignInBtn.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition";
-                signUpView.classList.remove('hidden');
-                signInView.classList.add('hidden');
-            }
-        };
-
         window.togglePasswordVisibility = function(inputId, btnEl) {
             const input = document.getElementById(inputId);
             if (!input) return;
@@ -830,33 +822,49 @@
             }
         };
 
-        window.selectAvatarColor = function(colorClass, btnEl) {
-            selectedAvatarColor = colorClass;
-            const parent = btnEl.parentElement;
-            if (parent) {
-                parent.querySelectorAll('.avatar-color-btn').forEach(btn => {
-                    btn.classList.remove('ring-2', 'ring-white');
-                });
-            }
-            btnEl.classList.add('ring-2', 'ring-white');
+        window.handleAvatarFileChosen = function(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const size = 256;
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                    currentAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+
+                    const previewImg = document.getElementById('avatarPreviewImg');
+                    const placeholder = document.getElementById('avatarPlaceholder');
+                    if (previewImg) {
+                        previewImg.src = currentAvatarDataUrl;
+                        previewImg.classList.remove('hidden');
+                    }
+                    if (placeholder) placeholder.classList.add('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         };
 
-        window.backToSignIn = function() {
-            document.getElementById('authProfileSetupView').classList.add('hidden');
-            document.getElementById('authTabSwitcher').classList.remove('hidden');
-            document.getElementById('authSignInView').classList.remove('hidden');
-        };
+        window.handleConnectAndListBuckets = async function() {
+            const accessKeyId = document.getElementById('authAccessKey').value.trim();
+            const secretAccessKey = document.getElementById('authSecretKey').value.trim();
+            const endpointInput = document.getElementById('authEndpoint').value.trim();
+            const endpoint = endpointInput || 'https://5d0d1d468b161e84470798a691e7b5b9.r2.cloudflarestorage.com';
+            const errorEl = document.getElementById('authCredsError');
+            const btn = document.getElementById('authConnectBtn');
 
-        window.handleSignIn = async function() {
-            const endpoint = document.getElementById('signInEndpoint').value.trim();
-            const bucketName = document.getElementById('signInBucket').value.trim();
-            const accessKeyId = document.getElementById('signInAccessKey').value.trim();
-            const secretAccessKey = document.getElementById('signInSecretKey').value.trim();
-            const errorEl = document.getElementById('signInError');
-            const btn = document.getElementById('signInSubmitBtn');
-
-            if (!endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
-                errorEl.textContent = 'Please fill in all R2 connection fields.';
+            if (!accessKeyId || !secretAccessKey) {
+                errorEl.textContent = 'Please enter both Access Key ID and Secret Access Key.';
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -864,8 +872,6 @@
             errorEl.classList.add('hidden');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to R2...';
-
-            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
 
             try {
                 const testS3 = new AWS.S3({
@@ -877,74 +883,81 @@
                     s3ForcePathStyle: true
                 });
 
-                // Test connection
-                await testS3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
+                // Fetch all buckets with Admin Read & Write credentials
+                const res = await testS3.listBuckets().promise();
+                cachedBuckets = (res.Buckets || []).map(b => b.Name);
 
-                // Check for .r2drive/profile.json in the bucket
-                let profileFound = false;
-                try {
-                    const profileObj = await testS3.getObject({
-                        Bucket: bucketName,
-                        Key: '.r2drive/profile.json'
-                    }).promise();
-
-                    const parsed = JSON.parse(profileObj.Body.toString('utf-8'));
-                    if (parsed && parsed.name) {
-                        userProfile = {
-                            name: parsed.name,
-                            avatar: parsed.avatar || 'from-blue-600 to-indigo-600'
-                        };
-                        localStorage.setItem('r2_profile', JSON.stringify(userProfile));
-                        profileFound = true;
-                    }
-                } catch (profErr) {
-                    // Profile does not exist yet in this bucket
-                    profileFound = false;
+                if (!cachedBuckets || cachedBuckets.length === 0) {
+                    throw new Error("No buckets found in this Cloudflare R2 account. Please create a bucket in Cloudflare dashboard first.");
                 }
 
-                if (profileFound) {
-                    // Direct login: save session permanently
-                    localStorage.setItem('r2_credentials', JSON.stringify(creds));
-                    document.getElementById('authModal').classList.add('hidden');
-                    initR2Client(creds);
-                    showToast(`Welcome back, ${userProfile.name}!`, 'success');
-                } else {
-                    // Transition to step 2 to configure user profile name
-                    pendingCreds = creds;
-                    document.getElementById('authSignInView').classList.add('hidden');
-                    document.getElementById('authTabSwitcher').classList.add('hidden');
-                    document.getElementById('authProfileSetupView').classList.remove('hidden');
-                    setTimeout(() => {
-                        const nameInput = document.getElementById('setupDisplayName');
-                        if (nameInput) nameInput.focus();
-                    }, 100);
-                }
+                pendingCreds = { endpoint, accessKeyId, secretAccessKey };
+
+                // Switch to Stage 2: Bucket Selection
+                window.renderBucketCards(cachedBuckets);
+                document.getElementById('authStageCreds').classList.add('hidden');
+                document.getElementById('authStageBuckets').classList.remove('hidden');
             } catch (err) {
-                console.error('Sign In error:', err);
-                errorEl.textContent = 'Connection failed: ' + (err.message || 'Invalid R2 credentials or bucket name.');
+                console.error("Connection or bucket listing error:", err);
+                errorEl.textContent = 'Failed to connect: ' + (err.message || 'Invalid credentials or network issue.');
                 errorEl.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In to Drive';
+                btn.innerHTML = '<i class="fas fa-plug"></i> Connect & Discover Buckets';
             }
         };
 
-        window.handleCompleteProfile = async function() {
-            if (!pendingCreds) return;
-            const nameInput = document.getElementById('setupDisplayName');
-            const errorEl = document.getElementById('setupProfileError');
-            const btn = document.getElementById('setupProfileSubmitBtn');
-            const name = nameInput.value.trim();
+        window.renderBucketCards = function(buckets) {
+            const container = document.getElementById('bucketCardsContainer');
+            if (!container) return;
+            container.innerHTML = '';
 
-            if (!name) {
-                errorEl.textContent = 'Please enter your display name.';
+            buckets.forEach((bucketName, idx) => {
+                const isChecked = idx === 0 || bucketName === BUCKET_NAME;
+                const card = document.createElement('label');
+                card.className = `flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${isChecked ? 'bg-indigo-600/10 border-indigo-500/50' : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'}`;
+                card.onclick = function() {
+                    container.querySelectorAll('label').forEach(l => {
+                        l.className = 'flex items-center gap-3 p-3 rounded-2xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.06] transition cursor-pointer';
+                    });
+                    card.className = 'flex items-center gap-3 p-3 rounded-2xl border border-indigo-500/50 bg-indigo-600/10 transition cursor-pointer';
+                };
+
+                card.innerHTML = `
+                    <input type="radio" name="selectedBucketRadio" value="${bucketName}" ${isChecked ? 'checked' : ''} class="text-indigo-600 focus:ring-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 text-sm shrink-0">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-white truncate font-mono">${bucketName}</p>
+                        <p class="text-[10px] text-slate-400">Cloudflare R2 Bucket</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        window.handleSelectBucketAndProceed = async function() {
+            const errorEl = document.getElementById('authBucketError');
+            const btn = document.getElementById('authSelectBucketBtn');
+            const selectedRadio = document.querySelector('input[name="selectedBucketRadio"]:checked');
+
+            if (!selectedRadio) {
+                errorEl.textContent = 'Please select a bucket to continue.';
                 errorEl.classList.remove('hidden');
                 return;
             }
 
+            const chosenBucket = selectedRadio.value;
             errorEl.classList.add('hidden');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving profile...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking bucket...';
+
+            if (!pendingCreds) {
+                const saved = localStorage.getItem('r2_credentials');
+                if (saved) pendingCreds = JSON.parse(saved);
+            }
+            pendingCreds.bucketName = chosenBucket;
 
             try {
                 const testS3 = new AWS.S3({
@@ -956,99 +969,218 @@
                     s3ForcePathStyle: true
                 });
 
-                userProfile = {
-                    name: name,
-                    avatar: selectedAvatarColor || 'from-blue-600 to-indigo-600',
-                    createdAt: new Date().toISOString()
-                };
+                // Test bucket access
+                await testS3.listObjectsV2({ Bucket: chosenBucket, MaxKeys: 1 }).promise();
 
-                // Save profile to R2 bucket .r2drive/profile.json
-                await testS3.putObject({
-                    Bucket: pendingCreds.bucketName,
-                    Key: '.r2drive/profile.json',
-                    Body: JSON.stringify(userProfile),
-                    ContentType: 'application/json'
-                }).promise();
+                // If in switch bucket mode, switch and save immediately
+                if (isSwitchBucketMode) {
+                    isSwitchBucketMode = false;
+                    localStorage.setItem('r2_credentials', JSON.stringify(pendingCreds));
+                    document.getElementById('authModal').classList.add('hidden');
+                    initR2Client(pendingCreds);
+                    showToast(`Switched drive to bucket: ${chosenBucket}`, 'success');
+                    return;
+                }
 
-                // Save credentials and profile permanently
-                localStorage.setItem('r2_credentials', JSON.stringify(pendingCreds));
-                localStorage.setItem('r2_profile', JSON.stringify(userProfile));
+                // Check for .r2drive/profile.json in this bucket
+                let profileFound = false;
+                try {
+                    const profObj = await testS3.getObject({
+                        Bucket: chosenBucket,
+                        Key: '.r2drive/profile.json'
+                    }).promise();
 
-                document.getElementById('authModal').classList.add('hidden');
-                initR2Client(pendingCreds);
-                showToast(`Welcome to R2 Drive, ${userProfile.name}!`, 'success');
+                    const parsed = JSON.parse(profObj.Body.toString('utf-8'));
+                    if (parsed && parsed.name) {
+                        userProfile = {
+                            name: parsed.name,
+                            avatarUrl: parsed.avatarUrl || ''
+                        };
+                        currentAvatarDataUrl = userProfile.avatarUrl || '';
+                        profileFound = true;
+                    }
+                } catch (profErr) {
+                    profileFound = false;
+                }
+
+                if (profileFound) {
+                    // Profile already exists in this bucket -> login immediately!
+                    localStorage.setItem('r2_credentials', JSON.stringify(pendingCreds));
+                    localStorage.setItem('r2_profile', JSON.stringify(userProfile));
+                    document.getElementById('authModal').classList.add('hidden');
+                    initR2Client(pendingCreds);
+                    showToast(`Welcome back, ${userProfile.name}!`, 'success');
+                } else {
+                    // Advance to Stage 3: Profile Setup
+                    document.getElementById('authStageBuckets').classList.add('hidden');
+                    document.getElementById('authStageProfile').classList.remove('hidden');
+
+                    const nameInput = document.getElementById('profileNameInput');
+                    if (nameInput) {
+                        nameInput.value = userProfile.name !== 'User' ? userProfile.name : '';
+                        setTimeout(() => nameInput.focus(), 100);
+                    }
+                }
             } catch (err) {
-                console.error('Failed to save profile:', err);
-                errorEl.textContent = 'Failed to save profile: ' + (err.message || 'Error writing to bucket.');
+                console.error("Bucket access error:", err);
+                errorEl.textContent = 'Cannot access bucket: ' + (err.message || 'Permissions error.');
                 errorEl.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-check"></i> Complete & Enter Drive';
+                btn.innerHTML = '<i class="fas fa-check"></i> Use This Bucket';
             }
         };
 
-        window.handleSignUp = async function() {
-            const name = document.getElementById('signUpDisplayName').value.trim();
-            const endpoint = document.getElementById('signUpEndpoint').value.trim();
-            const bucketName = document.getElementById('signUpBucket').value.trim();
-            const accessKeyId = document.getElementById('signUpAccessKey').value.trim();
-            const secretAccessKey = document.getElementById('signUpSecretKey').value.trim();
-            const errorEl = document.getElementById('signUpError');
-            const btn = document.getElementById('signUpSubmitBtn');
+        window.handleSaveProfileAndEnter = async function() {
+            const nameInput = document.getElementById('profileNameInput');
+            const errorEl = document.getElementById('authProfileError');
+            const btn = document.getElementById('authSaveProfileBtn');
+            const name = (nameInput.value || '').trim();
 
-            if (!name || !endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
-                errorEl.textContent = 'Please enter your name and all R2 credentials.';
+            if (!name) {
+                errorEl.textContent = 'Please enter your display name.';
                 errorEl.classList.remove('hidden');
                 return;
             }
 
             errorEl.classList.add('hidden');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating profile & connecting...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving profile...';
 
-            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
+            if (!pendingCreds) {
+                const saved = localStorage.getItem('r2_credentials');
+                if (saved) pendingCreds = JSON.parse(saved);
+            }
 
             try {
-                const testS3 = new AWS.S3({
-                    endpoint: new AWS.Endpoint(endpoint),
-                    accessKeyId: accessKeyId,
-                    secretAccessKey: secretAccessKey,
+                const targetS3 = new AWS.S3({
+                    endpoint: new AWS.Endpoint(pendingCreds.endpoint),
+                    accessKeyId: pendingCreds.accessKeyId,
+                    secretAccessKey: pendingCreds.secretAccessKey,
                     region: 'auto',
                     signatureVersion: 'v4',
                     s3ForcePathStyle: true
                 });
 
-                // Test connection
-                await testS3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
-
                 userProfile = {
                     name: name,
-                    avatar: selectedAvatarColor || 'from-blue-600 to-indigo-600',
-                    createdAt: new Date().toISOString()
+                    avatarUrl: currentAvatarDataUrl || '',
+                    updatedAt: new Date().toISOString()
                 };
 
-                // Store profile inside the R2 bucket .r2drive/profile.json
-                await testS3.putObject({
-                    Bucket: bucketName,
+                // Store profile inside .r2drive/profile.json in the chosen bucket
+                await targetS3.putObject({
+                    Bucket: pendingCreds.bucketName,
                     Key: '.r2drive/profile.json',
                     Body: JSON.stringify(userProfile),
                     ContentType: 'application/json'
                 }).promise();
 
                 // Save permanently
-                localStorage.setItem('r2_credentials', JSON.stringify(creds));
+                localStorage.setItem('r2_credentials', JSON.stringify(pendingCreds));
                 localStorage.setItem('r2_profile', JSON.stringify(userProfile));
 
                 document.getElementById('authModal').classList.add('hidden');
-                initR2Client(creds);
-                showToast(`Account created! Welcome, ${userProfile.name}!`, 'success');
+                initR2Client(pendingCreds);
+
+                if (isEditProfileMode) {
+                    isEditProfileMode = false;
+                    showToast('Profile and photo updated!', 'success');
+                } else {
+                    showToast(`Welcome to R2 Drive, ${userProfile.name}!`, 'success');
+                }
             } catch (err) {
-                console.error('Sign Up error:', err);
-                errorEl.textContent = 'Connection failed: ' + (err.message || 'Invalid R2 credentials or bucket name.');
+                console.error("Failed to save profile:", err);
+                errorEl.textContent = 'Failed to save profile: ' + (err.message || 'Error writing to bucket.');
                 errorEl.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up & Connect';
+                btn.innerHTML = '<i class="fas fa-check"></i> Save & Enter Drive';
+            }
+        };
+
+        window.backToCreds = function() {
+            if (isSwitchBucketMode) {
+                isSwitchBucketMode = false;
+                document.getElementById('authModal').classList.add('hidden');
+                return;
+            }
+            document.getElementById('authStageBuckets').classList.add('hidden');
+            document.getElementById('authStageCreds').classList.remove('hidden');
+        };
+
+        window.backToBucketSelect = function() {
+            if (isEditProfileMode) {
+                isEditProfileMode = false;
+                document.getElementById('authModal').classList.add('hidden');
+                return;
+            }
+            document.getElementById('authStageProfile').classList.add('hidden');
+            document.getElementById('authStageBuckets').classList.remove('hidden');
+        };
+
+        window.openEditProfileModal = function() {
+            isEditProfileMode = true;
+            isSwitchBucketMode = false;
+
+            document.getElementById('authStageCreds').classList.add('hidden');
+            document.getElementById('authStageBuckets').classList.add('hidden');
+            document.getElementById('authStageProfile').classList.remove('hidden');
+
+            const title = document.getElementById('profileStageTitle');
+            const sub = document.getElementById('profileStageSubtitle');
+            const backBtn = document.getElementById('authProfileBackBtn');
+            const nameInput = document.getElementById('profileNameInput');
+            const previewImg = document.getElementById('avatarPreviewImg');
+            const placeholder = document.getElementById('avatarPlaceholder');
+
+            if (title) title.textContent = 'Edit Profile & Photo';
+            if (sub) sub.textContent = 'Update your profile information in this vault';
+            if (backBtn) backBtn.textContent = 'Cancel';
+
+            if (nameInput) nameInput.value = userProfile.name || '';
+            currentAvatarDataUrl = userProfile.avatarUrl || '';
+
+            if (currentAvatarDataUrl) {
+                if (previewImg) {
+                    previewImg.src = currentAvatarDataUrl;
+                    previewImg.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+            } else {
+                if (previewImg) previewImg.classList.add('hidden');
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+
+            document.getElementById('authModal').classList.remove('hidden');
+        };
+
+        window.openBucketSwitcher = async function() {
+            isSwitchBucketMode = true;
+            isEditProfileMode = false;
+
+            document.getElementById('authStageCreds').classList.add('hidden');
+            document.getElementById('authStageProfile').classList.add('hidden');
+            document.getElementById('authStageBuckets').classList.remove('hidden');
+
+            const cancelBtn = document.getElementById('authBucketCancelBtn');
+            if (cancelBtn) cancelBtn.textContent = 'Cancel';
+
+            const savedCreds = localStorage.getItem('r2_credentials');
+            if (savedCreds) {
+                pendingCreds = JSON.parse(savedCreds);
+            }
+
+            document.getElementById('authModal').classList.remove('hidden');
+
+            try {
+                if (s3) {
+                    const res = await s3.listBuckets().promise();
+                    cachedBuckets = (res.Buckets || []).map(b => b.Name);
+                    window.renderBucketCards(cachedBuckets);
+                }
+            } catch (e) {
+                console.error("Failed to list buckets for switch:", e);
             }
         };
 
