@@ -9,20 +9,24 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.webkit.*
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+
+    private var pendingApkFile: File? = null
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -50,6 +56,20 @@ class MainActivity : AppCompatActivity() {
         }
         fileUploadCallback?.onReceiveValue(uris)
         fileUploadCallback = null
+    }
+
+    private val installPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (packageManager.canRequestPackageInstalls()) {
+                pendingApkFile?.let { file ->
+                    launchInstallIntent(file)
+                }
+            } else {
+                Toast.makeText(this, "Permission to install update was denied", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,19 +134,24 @@ class MainActivity : AppCompatActivity() {
             databaseEnabled = true
             allowFileAccess = true
             allowContentAccess = true
-            useWideViewPort = true
-            loadWithOverviewMode = true
+            // Mobile-first rendering: true 1:1 mobile scale, NO desktop zoom-out
+            useWideViewPort = false
+            loadWithOverviewMode = false
             displayZoomControls = false
             builtInZoomControls = false
             setSupportZoom(false)
+            textZoom = 100
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = "${userAgentString} R2DriveNative/1.0.2"
+            userAgentString = "${userAgentString} R2DriveNative/1.0.3 Mobile"
         }
 
         // Enable Hardware Acceleration on the WebView layer
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        // Register In-App Updater JavaScript Interface
+        webView.addJavascriptInterface(AndroidUpdaterBridge(), "AndroidUpdater")
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -263,6 +288,141 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    // In-App APK Downloader and Installer
+    inner class AndroidUpdaterBridge {
+        @JavascriptInterface
+        fun startDownloadAndInstall(apkUrl: String, versionName: String) {
+            runOnUiThread {
+                downloadAndInstallUpdate(apkUrl, versionName)
+            }
+        }
+    }
+
+    private fun downloadAndInstallUpdate(apkUrl: String, versionName: String) {
+        Thread {
+            try {
+                var currentUrl = apkUrl
+                var connection: HttpURLConnection
+                var redirects = 0
+
+                // Follow redirects (GitHub Releases redirect to AWS S3 CDN)
+                while (true) {
+                    val url = URL(currentUrl)
+                    connection = url.openConnection() as HttpURLConnection
+                    connection.instanceFollowRedirects = false
+                    connection.connectTimeout = 15000
+                    connection.readTimeout = 30000
+                    connection.setRequestProperty("User-Agent", "Mozilla/5.0 R2DriveNativeUpdater")
+                    connection.connect()
+
+                    val status = connection.responseCode
+                    if (status == HttpURLConnection.HTTP_MOVED_TEMP ||
+                        status == HttpURLConnection.HTTP_MOVED_PERM ||
+                        status == HttpURLConnection.HTTP_SEE_OTHER ||
+                        status == 307 || status == 308
+                    ) {
+                        currentUrl = connection.getHeaderField("Location")
+                        connection.disconnect()
+                        redirects++
+                        if (redirects > 8) throw Exception("Too many redirects")
+                        continue
+                    }
+                    break
+                }
+
+                val fileLength = connection.contentLength
+                val inputStream: InputStream = connection.inputStream
+
+                val downloadDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: cacheDir
+                val outputFile = File(downloadDir, "R2-Drive-v${versionName}.apk")
+                if (outputFile.exists()) {
+                    outputFile.delete()
+                }
+
+                val outputStream = FileOutputStream(outputFile)
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                var totalBytesRead: Long = 0
+
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    outputStream.write(buffer, 0, bytesRead)
+                    totalBytesRead += bytesRead
+
+                    val percent = if (fileLength > 0) ((totalBytesRead * 100) / fileLength).toInt() else 0
+                    val loadedStr = formatFileSize(totalBytesRead)
+                    val totalStr = if (fileLength > 0) formatFileSize(fileLength.toLong()) else "..."
+
+                    runOnUiThread {
+                        webView.evaluateJavascript(
+                            "if(window.onUpdateDownloadProgress) window.onUpdateDownloadProgress($percent, '$loadedStr', '$totalStr');",
+                            null
+                        )
+                    }
+                }
+
+                outputStream.flush()
+                outputStream.close()
+                inputStream.close()
+                connection.disconnect()
+
+                runOnUiThread {
+                    webView.evaluateJavascript(
+                        "if(window.onUpdateDownloadComplete) window.onUpdateDownloadComplete();",
+                        null
+                    )
+                    promptInstall(outputFile)
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    val msg = e.message?.replace("'", "\\'") ?: "Unknown error"
+                    webView.evaluateJavascript(
+                        "if(window.onUpdateDownloadError) window.onUpdateDownloadError('$msg');",
+                        null
+                    )
+                    Toast.makeText(this@MainActivity, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun promptInstall(apkFile: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!packageManager.canRequestPackageInstalls()) {
+                pendingApkFile = apkFile
+                Toast.makeText(this, "Please allow R2 Drive to install updates", Toast.LENGTH_LONG).show()
+                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                installPermissionLauncher.launch(intent)
+                return
+            }
+        }
+        launchInstallIntent(apkFile)
+    }
+
+    private fun launchInstallIntent(apkFile: File) {
+        try {
+            val contentUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                apkFile
+            )
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(contentUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(installIntent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Unable to launch installer: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun formatFileSize(bytes: Long): String {
+        val mb = bytes.toDouble() / (1024 * 1024)
+        return String.format("%.1f MB", mb)
     }
 
     override fun onResume() {
