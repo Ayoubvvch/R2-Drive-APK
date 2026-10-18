@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = "${userAgentString} R2DriveNative/1.0.6 Mobile"
+            userAgentString = "${userAgentString} R2DriveNative/1.0.7 Mobile"
         }
 
         // Enable Hardware Acceleration on the WebView layer

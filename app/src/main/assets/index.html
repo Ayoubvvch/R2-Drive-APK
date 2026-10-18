@@ -585,7 +585,7 @@
         // ==========================================
         // App Version & In-App Update System
         // ==========================================
-        const APP_CURRENT_VERSION = "1.0.6";
+        const APP_CURRENT_VERSION = "1.0.7";
         let latestUpdateInfo = null;
 
         function compareSemver(v1, v2) {
@@ -729,6 +729,12 @@
         // ==========================================
         // R2 Vault Client & User Profile Management
         // ==========================================
+        const APP_HIDDEN_DIR = ".AcDrive";
+        function isInternalAppKey(key) {
+            if (!key) return false;
+            return key.startsWith(APP_HIDDEN_DIR + '/') || key.startsWith('.AcDrive/') || key.startsWith('.r2drive/');
+        }
+
         let BUCKET_NAME = "";
         let s3 = null;
         let userProfile = { name: 'User', avatarUrl: '' };
@@ -1055,22 +1061,32 @@
                     return;
                 }
 
-                // Check for .r2drive/profile.json in this bucket
+                // Check for .AcDrive/profile.json in this bucket (with fallback to .r2drive/profile.json)
                 let profileFound = false;
                 try {
-                    const profObj = await testS3.getObject({
-                        Bucket: chosenBucket,
-                        Key: '.r2drive/profile.json'
-                    }).promise();
+                    let profObj = null;
+                    try {
+                        profObj = await testS3.getObject({
+                            Bucket: chosenBucket,
+                            Key: `${APP_HIDDEN_DIR}/profile.json`
+                        }).promise();
+                    } catch (e1) {
+                        profObj = await testS3.getObject({
+                            Bucket: chosenBucket,
+                            Key: '.r2drive/profile.json'
+                        }).promise();
+                    }
 
-                    const parsed = JSON.parse(profObj.Body.toString('utf-8'));
-                    if (parsed && parsed.name) {
-                        userProfile = {
-                            name: parsed.name,
-                            avatarUrl: parsed.avatarUrl || ''
-                        };
-                        currentAvatarDataUrl = userProfile.avatarUrl || '';
-                        profileFound = true;
+                    if (profObj && profObj.Body) {
+                        const parsed = JSON.parse(profObj.Body.toString('utf-8'));
+                        if (parsed && parsed.name) {
+                            userProfile = {
+                                name: parsed.name,
+                                avatarUrl: parsed.avatarUrl || ''
+                            };
+                            currentAvatarDataUrl = userProfile.avatarUrl || '';
+                            profileFound = true;
+                        }
                     }
                 } catch (profErr) {
                     profileFound = false;
@@ -1141,10 +1157,10 @@
                     updatedAt: new Date().toISOString()
                 };
 
-                // Store profile inside .r2drive/profile.json in the chosen bucket
+                // Store profile inside .AcDrive/profile.json in the chosen bucket
                 await targetS3.putObject({
                     Bucket: pendingCreds.bucketName,
-                    Key: '.r2drive/profile.json',
+                    Key: `${APP_HIDDEN_DIR}/profile.json`,
                     Body: JSON.stringify(userProfile),
                     ContentType: 'application/json'
                 }).promise();
@@ -1618,7 +1634,7 @@
             let totalFilesCount = 0;
 
             allFiles.forEach(f => {
-                if (!f.Key.startsWith('.r2drive/') && !f.Key.endsWith('/')) {
+                if (!isInternalAppKey(f.Key) && !f.Key.endsWith('/')) {
                     totalBytes += f.Size || 0;
                     totalFilesCount++;
                 }
@@ -1646,7 +1662,7 @@
             if (query !== '') {
                 // Search across all files in vault
                 items = allFiles.filter(file => {
-                    return !file.Key.startsWith('.r2drive/') && !file.Key.endsWith('/') && file.Key.toLowerCase().includes(query);
+                    return !isInternalAppKey(file.Key) && !file.Key.endsWith('/') && file.Key.toLowerCase().includes(query);
                 }).map(file => ({
                     Key: file.Key,
                     Name: file.Key.split('/').pop(),
@@ -1660,7 +1676,7 @@
 
                 allFiles.forEach(file => {
                     const key = file.Key;
-                    if (key.startsWith('.r2drive/')) return;
+                    if (isInternalAppKey(key)) return;
                     if (key.startsWith(currentPath) && key !== currentPath) {
                         const relative = key.substring(currentPath.length);
                         const slashIdx = relative.indexOf('/');
@@ -1996,6 +2012,12 @@
             const newName = document.getElementById('renameModalNewName').value.trim();
             if (!newName || !itemToRename) return;
 
+            if (isInternalAppKey(itemToRename)) {
+                window.closeRenameModal();
+                showToast('Internal app folder cannot be renamed.', 'error');
+                return;
+            }
+
             const isFolder = itemToRename.endsWith('/');
             const parent = itemToRename.substring(0, itemToRename.lastIndexOf('/', itemToRename.length - 2) + 1);
             const targetKey = parent + newName + (isFolder ? '/' : '');
@@ -2048,6 +2070,11 @@
 
         window.submitDeleteConfirmed = async function() {
             if (!itemToDelete) return;
+            if (isInternalAppKey(itemToDelete)) {
+                window.closeConfirmModal();
+                showToast('Internal app folder cannot be deleted.', 'error');
+                return;
+            }
             window.closeConfirmModal();
             showToast('Deleting item...', 'info');
 
