@@ -1,0 +1,282 @@
+package com.ayoub.r2drive
+
+import android.annotation.SuppressLint
+import android.app.DownloadManager
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.webkit.*
+import android.widget.FrameLayout
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.webkit.WebViewAssetLoader
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var rootLayout: FrameLayout
+    private lateinit var webView: WebView
+    private lateinit var fullscreenContainer: FrameLayout
+
+    private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (fileUploadCallback == null) return@registerForActivityResult
+
+        val uris: Array<Uri>? = when {
+            result.resultCode != RESULT_OK || result.data == null -> null
+            result.data?.clipData != null -> {
+                val clipData = result.data!!.clipData!!
+                Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+            }
+            result.data?.data != null -> arrayOf(result.data!!.data!!)
+            else -> null
+        }
+        fileUploadCallback?.onReceiveValue(uris)
+        fileUploadCallback = null
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Setup dark status bar and navigation bar
+        setupWindowDecorations()
+
+        // Create root layout programmatically for speed and zero XML inflate overhead
+        rootLayout = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#050508"))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        fullscreenContainer = FrameLayout(this).apply {
+            setBackgroundColor(Color.BLACK)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        webView = WebView(this).apply {
+            setBackgroundColor(Color.parseColor("#050508"))
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        rootLayout.addView(webView)
+        rootLayout.addView(fullscreenContainer)
+        setContentView(rootLayout)
+
+        setupWebView()
+        setupBackNavigation()
+    }
+
+    private fun setupWindowDecorations() {
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        window.statusBarColor = Color.parseColor("#050508")
+        window.navigationBarColor = Color.parseColor("#050508")
+
+        val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = false
+        insetsController.isAppearanceLightNavigationBars = false
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupWebView() {
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            displayZoomControls = false
+            builtInZoomControls = false
+            setSupportZoom(false)
+            mediaPlaybackRequiresUserGesture = false
+            cacheMode = WebSettings.LOAD_DEFAULT
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            userAgentString = "${userAgentString} R2DriveNative/1.0.2"
+        }
+
+        // Enable Hardware Acceleration on the WebView layer
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
+                request?.url?.let { uri ->
+                    val intercepted = assetLoader.shouldInterceptRequest(uri)
+                    if (intercepted != null) return intercepted
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val url = request?.url?.toString() ?: return false
+                if (url.startsWith("https://appassets.androidplatform.net/") ||
+                    url.startsWith("blob:") ||
+                    url.startsWith("data:")
+                ) {
+                    return false
+                }
+                // Open external links safely
+                return try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+
+        webView.webChromeClient = object : WebChromeClient() {
+            // Support input type="file" upload dialogs natively
+            override fun onShowFileChooser(
+                view: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = filePathCallback
+
+                val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                if (fileChooserParams?.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
+
+                try {
+                    filePickerLauncher.launch(intent)
+                } catch (e: Exception) {
+                    fileUploadCallback?.onReceiveValue(null)
+                    fileUploadCallback = null
+                    return false
+                }
+                return true
+            }
+
+            // Support Fullscreen Video Player (Plyr)
+            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                if (customView != null) {
+                    onHideCustomView()
+                    return
+                }
+                customView = view
+                customViewCallback = callback
+                fullscreenContainer.addView(view)
+                fullscreenContainer.visibility = View.VISIBLE
+                webView.visibility = View.GONE
+            }
+
+            override fun onHideCustomView() {
+                if (customView == null) return
+                fullscreenContainer.visibility = View.GONE
+                fullscreenContainer.removeView(customView)
+                customViewCallback?.onCustomViewHidden()
+                customView = null
+                customViewCallback = null
+                webView.visibility = View.VISIBLE
+            }
+
+            // Permissions (e.g. video/audio capture if needed)
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                request?.grant(request.resources)
+            }
+        }
+
+        // Native Download handling via Android DownloadManager
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            try {
+                val filename = URLUtil.guessFileName(url, contentDisposition, mimetype)
+                val request = DownloadManager.Request(Uri.parse(url)).apply {
+                    setMimeType(mimetype)
+                    addRequestHeader("User-Agent", userAgent)
+                    setDescription("Downloading $filename")
+                    setTitle(filename)
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+                }
+                val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                manager.enqueue(request)
+                Toast.makeText(this@MainActivity, "Downloading: $filename", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                } catch (ex: Exception) {
+                    Toast.makeText(this@MainActivity, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // Load the local app asset with high-speed internal origin
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+    }
+
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (customView != null) {
+                    // Exit fullscreen video
+                    webView.webChromeClient?.onHideCustomView()
+                } else if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView.onResume()
+    }
+
+    override fun onPause() {
+        webView.onPause()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        webView.destroy()
+        super.onDestroy()
+    }
+}

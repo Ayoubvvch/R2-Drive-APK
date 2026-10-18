@@ -1,0 +1,90 @@
+name: Build & Release Signed APK
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. 1.0.0)'
+        required: false
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Signed Release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare APK Asset
+        id: prepare_apk
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+              VERSION="${GITHUB_REF_NAME#v}"
+            else
+              VERSION="1.0.${{ github.run_number }}"
+            fi
+          fi
+          
+          OUTPUT_DIR="app/build/outputs/apk/release"
+          APK_FILE=$(find "$OUTPUT_DIR" -type f -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: Release APK not found!"
+            exit 1
+          fi
+          
+          TARGET_NAME="R2-Drive-v${VERSION}.apk"
+          cp "$APK_FILE" "$TARGET_NAME"
+          
+          echo "apk_path=$TARGET_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release and Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prepare_apk.outputs.tag_name }}
+          name: "R2 Drive v${{ steps.prepare_apk.outputs.version }}"
+          body: |
+            ### 🚀 R2 Drive - Native Android Release (v${{ steps.prepare_apk.outputs.version }})
+            
+            - **Super Fast Native WebView** engine with hardware acceleration.
+            - **Permanently Signed**: Compatible with future in-place updates without uninstalling.
+            - **Zero-Knowledge Encryption**: Owner credentials protected with AES-256-GCM.
+            - **In-App Update System**: One-tap "Check for Updates" button to install latest builds.
+            - **Multi-User Vault Support**: Owner master password or custom R2 bucket credentials.
+            - **Native Integrations**:
+              - Instant offline startup from internal assets.
+              - Full Native File Chooser (Upload support).
+              - Background downloads via Android DownloadManager.
+              - Fullscreen media playback with Plyr support.
+              - Dark glass theme & edge-to-edge system bar theming.
+          files: ${{ steps.prepare_apk.outputs.apk_path }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

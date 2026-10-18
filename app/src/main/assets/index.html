@@ -1,0 +1,3616 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2 Drive - Premium Cloud Vault</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Plyr HTML5 Player CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+        
+        /* Custom Plyr theme overrides */
+        .plyr {
+            --plyr-color-main: #6366f1;
+            --plyr-video-background: #000000;
+            --plyr-menu-background: rgba(9, 9, 15, 0.95);
+            --plyr-menu-color: #f1f5f9;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            width: 100% !important;
+            max-height: 70vh !important;
+        }
+
+        .plyr video, 
+        .plyr__video-wrapper video,
+        #videoPlayer {
+            object-fit: contain !important;
+            max-height: 70vh !important;
+            width: 100% !important;
+        }
+
+        .plyr__video-wrapper {
+            background: #000000 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050508;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e1e2f;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2d2d44;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(13, 13, 23, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* Drag-select box selection marquee styling */
+        #selection-marquee {
+            position: absolute;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            background-color: rgba(99, 102, 241, 0.08);
+            pointer-events: none;
+            z-index: 100;
+            border-radius: 4px;
+        }
+        /* Minimized Media Player override styles */
+        #mediaPlayerModal.minimized {
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: none !important;
+            align-items: flex-end !important;
+            justify-content: flex-end !important;
+            padding: 1.5rem !important;
+        }
+
+        #mediaPlayerCard.minimized {
+            pointer-events: auto !important;
+            max-width: 360px !important;
+            margin: 0 !important;
+            border-color: rgba(99, 102, 241, 0.25) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 25px rgba(99, 102, 241, 0.1) !important;
+            border-radius: 1.5rem !important;
+        }
+
+        /* Adjustments inside minimized player */
+        #mediaPlayerCard.minimized .p-6 {
+            padding: 1rem !important;
+        }
+
+        #mediaPlayerCard.minimized .p-5 {
+            padding: 0.75rem 1rem !important;
+        }
+
+        #mediaPlayerCard.minimized #audioPlayerContainer {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+            gap: 1rem !important;
+        }
+
+        #mediaPlayerCard.minimized #audioPlayerContainer .w-20 {
+            width: 3.5rem !important;
+            height: 3.5rem !important;
+        }
+
+        #mediaPlayerCard.minimized #audioPlayerContainer .w-20 i {
+            font-size: 1.5rem !important;
+        }
+
+        /* Vinyl rotating animation */
+        @keyframes spin-vinyl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin-vinyl {
+            animation: spin-vinyl 10s linear infinite !important;
+        }
+
+        .animation-paused {
+            animation-play-state: paused !important;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#0e0e17',
+                            900: '#09090f',
+                            950: '#050508',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<!-- AC_SECURITY_START -->
+<link rel="stylesheet" href="/security-shield.css">
+<script src="/security-shield.js" defer></script>
+<!-- AC_SECURITY_END -->
+</head>
+<body class="bg-[#030307] text-slate-100 min-h-screen relative overflow-x-hidden pb-12 select-none">
+
+    <!-- Decorative background glowing elements -->
+    <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/[0.04] blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-500/[0.03] blur-[150px] pointer-events-none"></div>
+
+    <!-- Layout Container -->
+    <div class="min-h-screen flex flex-col lg:flex-row relative z-10">
+
+        <!-- Mobile Drawer Backdrop -->
+        <div id="sidebarBackdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0" onclick="window.toggleSidebar()"></div>
+
+        <!-- Sidebar Navigation (Left) -->
+        <aside id="sidebar" class="fixed top-0 left-0 z-50 w-72 h-screen bg-[#07070d]/90 backdrop-blur-2xl border-r border-white/[0.03] p-6 flex flex-col justify-between transform -translate-x-full transition-all duration-300 ease-in-out shrink-0">
+            <div class="flex flex-col gap-8">
+                <!-- Branding -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 via-indigo-650 via-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/15">
+                            <i class="fas fa-hdd text-lg text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent leading-none">R2 Drive</h1>
+                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-semibold font-mono">Premium Vault</p>
+                        </div>
+                    </div>
+                    <button onclick="window.toggleSidebar()" class="p-2 text-slate-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl transition" title="Close Sidebar">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation List -->
+                <nav class="flex flex-col gap-1.5">
+                    <button class="w-full text-left px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.03] text-blue-400 font-semibold text-sm flex items-center gap-3 transition duration-200">
+                        <i class="fas fa-folder-open text-base w-5 text-center"></i>
+                        <span>All Files</span>
+                    </button>
+                    <!-- Display Connection Status info -->
+                    <div class="mt-4 px-4 py-3 rounded-xl bg-white/[0.01] border border-white/[0.02] flex flex-col gap-2">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Connection</p>
+                            <div class="flex items-center gap-2 mt-1.5">
+                                <div id="statusIndicator" class="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
+                                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                    <span>Connected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-t border-white/[0.03] pt-2">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Live Sync</p>
+                            <div class="flex items-center gap-2 mt-1.5">
+                                <div id="syncIndicator" class="flex items-center gap-1.5 text-indigo-400 text-xs font-semibold">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full animate-[pulse_1.5s_infinite]"></span>
+                                    <span>Sync Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Utility Actions -->
+                    <div class="mt-3 pt-3 border-t border-white/[0.03] flex flex-col gap-1.5">
+                        <button onclick="window.checkForUpdates(true)" class="w-full text-left px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.03] text-xs font-semibold flex items-center gap-2.5 transition">
+                            <i class="fas fa-sync-alt text-indigo-400 text-xs w-4 text-center"></i>
+                            <span>Check for Updates</span>
+                        </button>
+                        <button onclick="window.resetVaultConfig()" class="w-full text-left px-3 py-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-2.5 transition" title="Disconnect and change vault">
+                            <i class="fas fa-sign-out-alt text-rose-400 text-xs w-4 text-center"></i>
+                            <span>Disconnect Vault</span>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Storage details (Sidebar bottom widget) -->
+            <div class="flex flex-col gap-4 bg-white/[0.02] border border-white/[0.03] p-4 rounded-2xl">
+                <div class="flex items-center gap-2 text-indigo-400">
+                    <i class="fas fa-cloud text-sm"></i>
+                    <span class="text-xs font-bold uppercase tracking-wider">Storage Status</span>
+                </div>
+                <div>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span id="totalSizeStat" class="text-sm font-bold text-slate-200">0 Bytes</span>
+                        <span class="text-[10px] text-slate-400">of 10 GB limit</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                        <div id="sidebarStorageBar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[11px] pt-1.5 border-t border-white/[0.03]">
+                    <div>
+                        <span class="text-slate-500 block">Total Files</span>
+                        <span id="totalFilesStat" class="font-bold text-slate-200">0</span>
+                    </div>
+                    <div class="min-w-0">
+                        <span class="text-slate-500 block">Bucket</span>
+                        <span id="bucketNameStat" class="font-bold text-slate-200 truncate block font-mono" title="my-vault">my-vault</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area (Right) -->
+        <div id="mainContentArea" class="flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out">
+
+            <!-- Header top bar -->
+            <header class="h-16 px-6 lg:px-8 border-b border-white/[0.03] flex items-center justify-between bg-[#04040a]/60 backdrop-blur-md sticky top-0 z-40">
+                <div class="flex items-center gap-4">
+                    <!-- Sidebar Toggle Button -->
+                    <button onclick="window.toggleSidebar()" class="p-2 text-slate-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl transition flex items-center justify-center" title="Toggle Sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="text-lg font-bold text-slate-100 hidden sm:block">My Vault</h2>
+                </div>
+
+                <!-- Toolbar controls -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center bg-white/[0.02] p-1 rounded-xl border border-white/5 gap-1">
+                        <!-- Paste button -->
+                        <button id="pasteBtn" class="p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.01] hover:bg-white/[0.03] text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-45 cursor-not-allowed" disabled title="Paste items here">
+                            <i class="fas fa-paste"></i>
+                        </button>
+                        
+                        <span class="w-px h-4 bg-white/5 mx-1"></span>
+
+                        <!-- View switcher toggles -->
+                        <button id="listViewBtn" class="p-2 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-all duration-250 flex items-center justify-center w-8 h-8" title="List View">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button id="gridViewBtn" class="p-2 rounded-lg text-blue-400 bg-white/[0.04] text-xs font-semibold transition-all duration-250 flex items-center justify-center w-8 h-8" title="Grid View">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+
+                        <span class="w-px h-4 bg-white/5 mx-1"></span>
+
+                        <!-- Toggle Hidden Files button -->
+                        <button id="toggleHiddenBtn" onclick="window.toggleHiddenFiles()" class="p-2 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8" title="Show Hidden Files (.dotfiles)">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
+
+                    <!-- Check for Updates button -->
+                    <button id="checkUpdateBtn" onclick="window.checkForUpdates(true)" class="px-3 py-1.5 rounded-xl text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-xs font-semibold transition-all duration-200 flex items-center gap-1.5" title="Check for Updates">
+                        <i class="fas fa-sync-alt" id="checkUpdateIcon"></i>
+                        <span class="hidden sm:inline">Updates</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Explorer content wrapper -->
+            <main class="flex-1 p-6 lg:p-8 flex flex-col gap-6 max-w-6xl w-full mx-auto">
+                
+                <!-- Controls Row: Search & Add button -->
+                <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/[0.01] border border-white/[0.03] p-4 rounded-2xl glass-panel">
+                    <!-- Search inputs -->
+                    <div class="relative w-full sm:w-80">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fas fa-search text-xs"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="w-full bg-[#050508]/60 hover:bg-[#07070e]/80 focus:bg-[#080812] border border-white/5 focus:border-indigo-500/50 focus:outline-none rounded-xl py-2 pl-9 pr-4 text-xs text-slate-200 transition-all duration-300 font-medium" placeholder="Search file name...">
+                    </div>
+
+                    <!-- Add new button (Dropdown) -->
+                    <div class="relative inline-block text-left w-full sm:w-auto shrink-0" id="newDropdownContainer">
+                        <button id="newDropdownBtn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-indigo-655 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-bold py-2 px-5 rounded-xl shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 text-xs">
+                            <i class="fas fa-plus"></i> Add New
+                        </button>
+                        <div id="newDropdownMenu" class="hidden absolute right-0 sm:left-0 mt-2 w-44 bg-[#09090f] border border-white/5 rounded-xl shadow-2xl z-20 py-1 transform scale-95 opacity-0 transition-all duration-200 backdrop-blur-xl">
+                            <button onclick="window.triggerFileInput()" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.03] hover:text-white transition flex items-center gap-2.5">
+                                <i class="fas fa-file-upload text-blue-400 text-xs w-4"></i> Upload Files
+                            </button>
+                            <button onclick="window.triggerFolderInput()" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/[0.03] hover:text-white transition flex items-center gap-2.5">
+                                <i class="fas fa-folder-open text-purple-400 text-xs w-4"></i> Upload Folder
+                            </button>
+                            <button onclick="window.promptNewFolder()" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/[0.03] hover:text-white transition flex items-center gap-2.5">
+                                <i class="fas fa-folder-plus text-amber-500 text-xs w-4"></i> New Folder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breadcrumbs Segment -->
+                <div class="flex items-center bg-white/[0.01] border border-white/[0.02] px-5 py-3.5 rounded-xl gap-3">
+                    <div class="flex items-center gap-1.5 overflow-x-auto min-w-0 py-0.5" id="breadcrumbs" style="scrollbar-width: none;">
+                        <!-- Breadcrumbs injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Hidden Input elements for file and folder selections -->
+                <input type="file" id="fileInput" class="hidden" multiple>
+                <input type="file" id="folderInput" class="hidden" webkitdirectory directory multiple>
+
+                <!-- Explorer Area for Mouse Marquee Selection -->
+                <div id="explorerArea" class="relative min-h-[400px]">
+                    
+                    <!-- Drag marquee selection box element -->
+                    <div id="selection-marquee" class="hidden"></div>
+
+                    <!-- List Explorer View (Table Container) -->
+                    <div id="fileTableContainer" class="hidden overflow-x-auto border border-white/[0.03] rounded-2xl bg-white/[0.01] shadow-2xl">
+                        <table class="min-w-full divide-y divide-white/[0.03]">
+                            <thead class="bg-white/[0.02]">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-12">
+                                        <input type="checkbox" id="selectAllCheckbox" onclick="window.toggleSelectAll(this)" class="w-4 h-4 rounded border-white/10 bg-slate-900 text-blue-600 focus:ring-blue-500 transition duration-200">
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-32">Size</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-52">Last Modified</th>
+                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fileListBody" class="divide-y divide-white/[0.02]">
+                                <tr>
+                                    <td colspan="5" class="text-center py-16 text-slate-500">
+                                        <div class="flex flex-col items-center gap-3">
+                                            <i class="fas fa-spinner fa-spin text-2xl text-indigo-400"></i>
+                                            <span class="text-xs font-medium">Fetching objects from R2...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Grid Explorer View Container -->
+                    <div id="fileGridContainer" class="">
+                        <div id="fileGridBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <!-- Card blocks injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Global context menu / actions dropdown -->
+    <div id="globalActionMenu" class="hidden absolute bg-[#09090f]/95 border border-white/5 rounded-xl shadow-2xl z-50 py-1.5 backdrop-blur-xl w-44"></div>
+
+    <!-- Drag & Drop overlay indicator -->
+    <div id="globalDragOverlay" class="fixed inset-0 bg-indigo-950/20 backdrop-blur-md border-2 border-dashed border-indigo-500/40 z-50 flex flex-col items-center justify-center hidden opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-[#09090f]/95 border border-white/5 p-8 rounded-3xl text-center shadow-2xl flex flex-col items-center gap-4 max-w-xs transform scale-95 transition-all duration-300">
+            <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center animate-bounce">
+                <i class="fas fa-cloud-upload-alt text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-100">Upload to Vault</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Drop files inside this window to import them to the active directory.</p>
+        </div>
+    </div>
+
+    <!-- Floating upload progress widget -->
+    <div id="uploadProgressWidget" class="fixed bottom-6 right-6 z-40 bg-[#09090f]/95 border border-white/[0.04] w-80 rounded-2xl shadow-2xl overflow-hidden hidden transform translate-y-2 opacity-0 transition-all duration-300 backdrop-blur-xl">
+        <div class="flex justify-between items-center bg-white/[0.02] px-4 py-3 border-b border-white/[0.03]">
+            <span class="text-xs font-bold text-slate-200" id="widgetTitle">Uploading file...</span>
+            <button onclick="window.closeProgressWidget()" class="text-slate-400 hover:text-white transition">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+        <div class="p-4 flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                    <i class="fas fa-file-upload text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1 text-left">
+                    <p class="text-xs font-semibold text-slate-200 truncate font-mono" id="widgetFileName" dir="ltr">file.zip</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5" id="widgetFileSize">0 Bytes</p>
+                </div>
+            </div>
+            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-white/[0.01]">
+                <div id="widgetProgressBar" class="bg-indigo-500 h-full w-0 transition-all duration-200"></div>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span id="widgetStatusText">Starting upload...</span>
+                <span id="widgetProgressPercent" class="font-bold text-indigo-400 font-mono">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Toast system container -->
+    <div id="toastContainer" class="fixed bottom-6 left-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Confirm delete custom dialog -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#09090f]/95 border border-white/5 rounded-3xl max-w-md w-full p-6 mx-4 shadow-2xl transform scale-95 transition-all duration-300" id="confirmModalCard">
+            <div class="flex items-center gap-3 text-rose-500 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
+                    <i class="fas fa-exclamation-triangle text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold">Confirm Delete</h3>
+            </div>
+            <p class="text-slate-300 text-xs mb-6 leading-relaxed text-left">
+                Are you sure you want to permanently delete <span id="confirmModalFileName" class="font-bold text-white break-all font-mono" dir="ltr"></span>? This action cannot be undone.
+            </p>
+            <div class="flex justify-end gap-2.5">
+                <button id="cancelDeleteBtn" class="px-4 py-2 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-300 rounded-xl transition text-xs font-semibold">Cancel</button>
+                <button id="confirmDeleteBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl transition text-xs font-semibold flex items-center gap-2 shadow-lg shadow-rose-600/15">
+                    <i class="fas fa-trash text-[10px]"></i> Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Folder modal -->
+    <div id="createFolderModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#09090f]/95 border border-white/5 rounded-3xl max-w-md w-full p-6 mx-4 shadow-2xl transform scale-95 transition-all duration-300" id="createFolderModalCard">
+            <div class="flex items-center gap-3 text-indigo-400 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                    <i class="fas fa-folder-plus text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold">Create Folder</h3>
+            </div>
+            <div class="mb-6 text-left">
+                <label for="folderNameInput" class="block text-[10px] uppercase tracking-wider text-slate-500 mb-2 font-bold">Folder Name</label>
+                <input type="text" id="folderNameInput" class="w-full bg-[#050508] border border-white/5 focus:border-indigo-500/40 focus:outline-none rounded-xl py-2.5 px-4 text-xs text-slate-200 transition-all duration-300 text-left font-medium" placeholder="Folder label...">
+            </div>
+            <div class="flex justify-end gap-2.5">
+                <button id="cancelCreateFolderBtn" class="px-4 py-2 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-300 rounded-xl transition text-xs font-semibold">Cancel</button>
+                <button id="confirmCreateFolderBtn" class="px-4 py-2 bg-indigo-650 bg-indigo-650 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/10">
+                    <i class="fas fa-check text-[10px]"></i> Create
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename modal dialog -->
+    <div id="renameModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#09090f]/95 border border-white/5 rounded-3xl max-w-md w-full p-6 mx-4 shadow-2xl transform scale-95 transition-all duration-300" id="renameModalCard">
+            <div class="flex items-center gap-3 text-indigo-400 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                    <i class="fas fa-edit text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold">Rename Item</h3>
+            </div>
+            <div class="mb-4 text-left">
+                <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-2 font-bold">Current Name</label>
+                <p id="renameModalOldName" class="text-xs text-slate-300 font-mono break-all bg-[#050508] p-3 rounded-xl border border-white/5" dir="ltr"></p>
+            </div>
+            <div class="mb-6 text-left">
+                <label for="renameNewNameInput" class="block text-[10px] uppercase tracking-wider text-slate-500 mb-2 font-bold">New Name</label>
+                <input type="text" id="renameNewNameInput" class="w-full bg-[#050508] border border-white/5 focus:border-indigo-500/40 focus:outline-none rounded-xl py-2.5 px-4 text-xs text-slate-200 transition-all duration-300 font-mono text-left font-medium" dir="ltr">
+            </div>
+            <div class="flex justify-end gap-2.5">
+                <button id="cancelRenameBtn" class="px-4 py-2 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-300 rounded-xl transition text-xs font-semibold">Cancel</button>
+                <button id="confirmRenameBtn" class="px-4 py-2 bg-indigo-655 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/15">
+                    <i class="fas fa-check text-[10px]"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Player streaming modal -->
+    <div id="mediaPlayerModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#09090f] border border-white/5 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl mx-4 transform scale-95 transition-all duration-300" id="mediaPlayerCard">
+            <!-- Player Header -->
+            <div class="flex justify-between items-center p-5 border-b border-white/[0.03]">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center" id="playerTypeIcon">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div>
+                        <span id="playerTitle" class="text-sm font-semibold text-slate-200 truncate max-w-sm font-mono block text-left" dir="ltr">file.mp4</span>
+                        <span id="playerSubtitle" class="text-[10px] text-slate-400 font-sans block text-left mt-0.5">Streaming media</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- Video/Audio Mode Toggle button -->
+                    <button id="playerModeToggleBtn" onclick="window.togglePlayerMode()" class="h-8 px-2.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-[11px] text-indigo-300 transition flex items-center justify-center gap-1.5 font-semibold" title="Switch Video / Audio Mode">
+                        <i class="fas fa-video text-xs text-indigo-400"></i> <span id="playerModeToggleText">Video</span>
+                    </button>
+                    <!-- Open in New Tab button -->
+                    <button id="playerNewTabBtn" onclick="window.openMediaInNewTab()" class="w-8 h-8 rounded-lg bg-white/[0.02] border border-white/5 text-slate-400 hover:text-white transition flex items-center justify-center" title="Open Media in New Tab">
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                    </button>
+                    <!-- Playback Speed button -->
+                    <button id="playerSpeedBtn" onclick="window.togglePlayerSpeed()" class="h-8 px-2 rounded-lg bg-white/[0.02] border border-white/5 text-[11px] text-slate-400 hover:text-white transition flex items-center justify-center font-mono font-semibold" title="Playback Speed">1.0x</button>
+                    <!-- Loop toggle button inside modal header -->
+                    <button id="playerLoopBtn" onclick="window.togglePlayerLoop()" class="w-8 h-8 rounded-lg bg-white/[0.02] border border-white/5 text-slate-400 hover:text-white transition flex items-center justify-center" title="Repeat Mode">
+                        <i class="fas fa-redo text-xs"></i>
+                    </button>
+                    <!-- Minimize/Dock button -->
+                    <button id="playerMinimizeBtn" onclick="window.togglePlayerMinimize()" class="w-8 h-8 rounded-lg bg-white/[0.02] border border-white/5 text-slate-400 hover:text-white transition flex items-center justify-center" title="Minimize/Dock Player">
+                        <i class="fas fa-compress-alt text-xs"></i>
+                    </button>
+                    <!-- Close button -->
+                    <button onclick="window.closeMediaPlayer()" class="w-8 h-8 rounded-lg bg-white/[0.02] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition flex items-center justify-center relative z-50 cursor-pointer" title="Close Player">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Player Screen -->
+            <div class="p-6 flex flex-col items-center justify-center bg-black/20">
+                <div id="videoPlayerContainer" class="w-full max-h-[70vh] hidden rounded-xl overflow-hidden border border-white/5 bg-black flex items-center justify-center">
+                    <video id="videoPlayer" class="w-full h-full" controls></video>
+                </div>
+                <div id="audioPlayerContainer" class="w-full py-8 px-4 hidden flex flex-col items-center gap-6">
+                    <div id="audioPlayerDisc" class="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-650 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 animate-pulse transition-all duration-300">
+                        <i class="fas fa-music text-3xl text-white"></i>
+                    </div>
+                    <audio id="audioPlayer" class="w-full max-w-md" controls></audio>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Viewer modal -->
+    <div id="pdfViewerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#09090f] border border-white/5 rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl mx-4 transform scale-95 transition-all duration-300" id="pdfViewerCard">
+            <!-- Header -->
+            <div class="flex justify-between items-center p-5 border-b border-white/[0.03]">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-rose-500/10 border border-rose-500/20 text-rose-455 text-rose-400 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-file-pdf text-lg"></i>
+                    </div>
+                    <span id="pdfViewerTitle" class="text-sm font-semibold text-slate-200 truncate max-w-md font-mono" dir="ltr">document.pdf</span>
+                </div>
+                <button onclick="window.closePdfViewer()" class="w-8 h-8 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] text-slate-400 hover:text-white transition flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- Frame Container -->
+            <div class="flex-1 bg-[#050508] p-2">
+                <iframe id="pdfFrame" class="w-full h-full rounded-xl border border-white/5 bg-[#09090f]" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vault Authentication & Access Control Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+        <div class="bg-[#09090f] border border-white/10 rounded-3xl max-w-md w-full p-6 shadow-2xl text-left" id="authModalCard">
+            <!-- Step 1: Owner Verification -->
+            <div id="authStepQuestion" class="flex flex-col items-center text-center py-2">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 shadow-lg shadow-indigo-500/10">
+                    <i class="fas fa-shield-alt text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 font-['Outfit']">Secure Vault Access</h3>
+                <p class="text-xs text-slate-400 mb-6 max-w-xs">Welcome to R2 Drive. Select your access mode to initialize the vault connection.</p>
+                <div class="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl w-full mb-6 text-left">
+                    <p class="text-xs font-semibold text-slate-200">Are you the Owner of this Vault?</p>
+                    <p class="text-[11px] text-slate-400 mt-1">If yes, unlock your cloud storage with your master password.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 w-full">
+                    <button onclick="window.showOwnerPasswordInput()" class="py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-key"></i> Yes, I am Owner
+                    </button>
+                    <button onclick="window.showPublicR2Config()" class="py-3 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 text-slate-300 hover:text-white font-semibold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fas fa-user"></i> No, Other User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Owner Password Input -->
+            <div id="authStepPassword" class="hidden py-1">
+                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white font-['Outfit']">Owner Authentication</h3>
+                        <p class="text-[11px] text-slate-400">Enter master password to decrypt vault credentials</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Master Password</label>
+                        <input type="password" id="ownerPasswordInput" onkeydown="if(event.key==='Enter') window.unlockOwnerVault()" class="w-full bg-[#050508] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Enter owner password...">
+                        <p id="ownerPasswordError" class="text-[11px] text-rose-400 mt-1.5 hidden"></p>
+                    </div>
+                    <div class="flex gap-2.5 pt-2">
+                        <button onclick="window.backToAuthQuestion()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
+                        <button onclick="window.unlockOwnerVault()" id="unlockVaultBtn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-unlock"></i> Unlock Vault
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Public Custom R2 Config -->
+            <div id="authStepPublic" class="hidden py-1">
+                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white font-['Outfit']">Cloudflare R2 Configuration</h3>
+                        <p class="text-[11px] text-slate-400">Connect using your own S3/R2 credentials</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">R2 Endpoint URL</label>
+                        <input type="text" id="publicEndpointInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="https://<account-id>.r2.cloudflarestorage.com">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bucket Name</label>
+                        <input type="text" id="publicBucketInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="e.g. my-vault">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Access Key ID</label>
+                        <input type="text" id="publicAccessKeyInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Access Key ID">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Secret Access Key</label>
+                        <input type="password" id="publicSecretKeyInput" class="w-full bg-[#050508] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="Secret Access Key">
+                    </div>
+                    <div class="flex gap-2.5 pt-2">
+                        <button onclick="window.backToAuthQuestion()" class="w-1/3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-semibold transition">Back</button>
+                        <button onclick="window.savePublicR2Config()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-check"></i> Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Software Update Modal -->
+    <div id="updateModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300 p-4">
+        <div class="bg-[#09090f] border border-white/10 rounded-3xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all duration-300 text-left" id="updateModalCard">
+            <div class="flex items-center justify-between pb-4 border-b border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <i class="fas fa-arrow-circle-up text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100 font-['Outfit']" id="updateModalTitle">Software Update</h3>
+                        <p class="text-xs text-slate-400" id="updateModalSubtitle">New version available</p>
+                    </div>
+                </div>
+                <button onclick="window.closeUpdateModal()" class="w-8 h-8 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition flex items-center justify-center">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+            <div class="py-4 space-y-3" id="updateModalBody">
+                <!-- Injected details -->
+            </div>
+            <div class="flex justify-end gap-3 pt-3 border-t border-white/5" id="updateModalActions">
+                <button onclick="window.closeUpdateModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition">Dismiss</button>
+                <a id="updateDownloadBtn" href="#" target="_blank" class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
+                    <i class="fas fa-download"></i> Download Update
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating selection action bar -->
+    <div id="selectionBar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#09090f]/95 border border-white/[0.04] backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-300 transform translate-y-10 opacity-0">
+        <span class="text-xs font-semibold text-slate-300 font-sans" id="selectionCount">0 items selected</span>
+        <span class="w-px h-4 bg-white/5"></span>
+        <div class="flex items-center gap-2">
+            <button onclick="window.cutSelected()" class="text-xs font-bold text-purple-400 hover:text-white bg-purple-500/10 hover:bg-purple-600 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5" title="Cut selected items">
+                <i class="fas fa-scissors text-xs"></i> Cut
+            </button>
+            <button onclick="window.copySelected()" class="text-xs font-bold text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-600 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5" title="Copy selected items">
+                <i class="fas fa-copy text-xs"></i> Copy
+            </button>
+            <button onclick="window.deleteSelected()" class="text-xs font-bold text-rose-455 text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-650 hover:bg-rose-600 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5" title="Delete selected items">
+                <i class="fas fa-trash text-xs"></i> Delete
+            </button>
+            <button onclick="window.clearSelection()" class="text-xs font-semibold text-slate-400 hover:text-slate-200 px-3 py-2 rounded-xl transition">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- AWS SDK v2 Dependency -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1390.0/aws-sdk.min.js"></script>
+    <!-- JSZip Dependency for Client-Side Folder Zip Downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Plyr HTML5 Player JS -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    
+    <script>
+        // ==========================================
+        // Connection configurations
+        // ==========================================
+        let BUCKET_NAME = "";
+        let s3 = null;
+
+        // AES-256-GCM Encrypted Owner Vault Payload (Decrypted only with owner password)
+        const ENCRYPTED_VAULT_PAYLOAD = {
+            salt: "2BgHRGxQ+/oXVvCaOSKMQQ==",
+            iv: "xVfli08LoSpcKgMu",
+            ciphertext: "N4k9Namn5LMVSSvbMx5tCkGUGXtVrzobZHq2uQNoZYW0jKDEOzM3jajCINk5DRu4H9gn75XiWCfnvFFJpcicdEYieIb4um3BdgwzQfc0ttHXKv0HiFDmUTfN3DlCw9VonhVGz+O58nfPoqHhXdleizYisFv9Jc010VLWZdMmLr7sdAT1Q+qVrbQneZzT2bBJLNPuSlB4bS2kzDdu3+nOL9qCM+1m9jaGDDNEsDH/rmgoQct2fmVo3WYoqDRTV06MyW2qeI/PpAF3FubCBSFwi1PZ2ADuyE/fQJJH9+6mNLsK+jYNT7cJOqVYKDoof4yBdar4cG3YIWYrPAk8EKM="
+        };
+
+        function base64ToUint8(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        async function decryptOwnerCredentials(password) {
+            const enc = new TextEncoder();
+            const dec = new TextDecoder();
+            const salt = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.salt);
+            const iv = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.iv);
+            const ciphertext = base64ToUint8(ENCRYPTED_VAULT_PAYLOAD.ciphertext);
+
+            const pwKey = await crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                "PBKDF2",
+                false,
+                ["deriveKey"]
+            );
+
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                pwKey,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["decrypt"]
+            );
+
+            const decrypted = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                ciphertext
+            );
+
+            return JSON.parse(dec.decode(decrypted));
+        }
+
+        function initR2Client(config) {
+            BUCKET_NAME = config.bucketName;
+            AWS.config.update({
+                accessKeyId: config.accessKeyId,
+                secretAccessKey: config.secretAccessKey,
+                region: "auto",
+                signatureVersion: "v4"
+            });
+            s3 = new AWS.S3({
+                endpoint: new AWS.Endpoint(config.endpoint),
+                s3ForcePathStyle: true
+            });
+
+            const bucketStat = document.getElementById('bucketNameStat');
+            if (bucketStat) {
+                bucketStat.textContent = BUCKET_NAME;
+                bucketStat.title = BUCKET_NAME;
+            }
+
+            const statusIndicator = document.getElementById('statusIndicator');
+            if (statusIndicator) {
+                statusIndicator.className = 'flex items-center gap-1.5 text-emerald-400 text-xs font-semibold';
+                statusIndicator.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span><span>Connected</span>';
+            }
+        }
+
+        // Helper to URL-encode CopySource keys properly for S3/R2 copy operations
+        function getCopySource(bucket, key) {
+            const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+            return bucket + '/' + encodedKey;
+        }
+
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+        const fileListBody = document.getElementById('fileListBody');
+        const fileGridBody = document.getElementById('fileGridBody');
+
+        const searchInput = document.getElementById('searchInput');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const pasteBtn = document.getElementById('pasteBtn');
+        const breadcrumbs = document.getElementById('breadcrumbs');
+        const newDropdownBtn = document.getElementById('newDropdownBtn');
+        const newDropdownMenu = document.getElementById('newDropdownMenu');
+        const newDropdownContainer = document.getElementById('newDropdownContainer');
+        const pdfViewerModal = document.getElementById('pdfViewerModal');
+        const pdfViewerCard = document.getElementById('pdfViewerCard');
+        const pdfViewerTitle = document.getElementById('pdfViewerTitle');
+        const pdfFrame = document.getElementById('pdfFrame');
+
+        // Global State variables
+        let allFiles = [];
+        let currentPath = ''; 
+        let currentView = 'grid'; 
+        let pendingDeleteKey = null;
+        let pendingRenameKey = null;
+        let clipboardFileKey = null; 
+        let clipboardItems = [];     
+        let clipboardAction = null;   
+        let selectedItems = [];       
+        let showHiddenFiles = false; // Default: always hidden
+
+        // Helper to check if a file or folder is a hidden dotfile
+        function isItemHidden(key, name) {
+            if (name && name.startsWith('.')) return true;
+            if (!key) return false;
+            return key.split('/').filter(Boolean).some(part => part.startsWith('.'));
+        }
+
+        window.toggleHiddenFiles = () => {
+            showHiddenFiles = !showHiddenFiles;
+            updateHiddenFilesBtnUI();
+            showToast(showHiddenFiles ? 'Hidden files (.dotfiles) are now visible' : 'Hidden files (.dotfiles) are now hidden', 'info');
+            renderFiles();
+        };
+
+        function updateHiddenFilesBtnUI() {
+            const btn = document.getElementById('toggleHiddenBtn');
+            if (!btn) return;
+            if (showHiddenFiles) {
+                btn.className = "p-2 rounded-lg text-amber-400 bg-amber-500/10 border border-amber-500/20 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 shadow-sm";
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+                btn.title = "Hide Dotfiles / Hidden Items";
+            } else {
+                btn.className = "p-2 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8";
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                btn.title = "Show Dotfiles / Hidden Items";
+            }
+        }
+
+        // Marquee selection state tracker
+        let marqueeDragStarted = false;
+
+        // Player Looping state tracker (restores preference from storage)
+        let isLoopEnabled = localStorage.getItem('r2_player_loop') === 'true';
+        let isPlayerMinimized = false;
+        let playerSpeed = 1.0;
+
+        // Sidebar Toggle Controller (Desktop & Mobile) - Always closed by default
+        let isSidebarCollapsed = true;
+
+        window.toggleSidebar = () => {
+            isSidebarCollapsed = !isSidebarCollapsed;
+            updateSidebarUI();
+        };
+
+        window.toggleMobileSidebar = window.toggleSidebar;
+
+        function updateSidebarUI() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const mainContent = document.getElementById('mainContentArea');
+
+            if (isSidebarCollapsed) {
+                if (sidebar) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                }
+                if (mainContent) {
+                    mainContent.classList.remove('lg:pl-72');
+                }
+                if (backdrop) {
+                    backdrop.classList.add('opacity-0');
+                    setTimeout(() => backdrop.classList.add('hidden'), 300);
+                }
+            } else {
+                if (sidebar) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                }
+                if (mainContent) {
+                    mainContent.classList.add('lg:pl-72');
+                }
+                if (backdrop && window.innerWidth < 1024) {
+                    backdrop.classList.remove('hidden');
+                    setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+                }
+            }
+        }
+
+        // Click to Open / Play File Handler
+        window.openFileItem = (fileKey) => {
+            if (marqueeDragStarted) return;
+            const cleanKey = fileKey.split('?')[0].trim();
+            const ext = cleanKey.split('.').pop().toLowerCase().trim();
+            const isPlayable = ['mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', '3gp', 'flv', 'wmv', 'ts', 'ogv', 'm2ts', 'mp4v', 'mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'opus', 'wma', 'm4b', 'alac'].includes(ext);
+            const isPdf = ext === 'pdf';
+            
+            if (isPlayable) {
+                window.playMedia(fileKey);
+            } else if (isPdf) {
+                window.viewPdf(fileKey);
+            } else {
+                window.downloadFile(fileKey);
+            }
+        };
+
+        // Actions Context Menu System (Ellipsis Dropdown)
+        window.showActionMenu = (event, key, type) => {
+            event.stopPropagation();
+            const menu = document.getElementById('globalActionMenu');
+            
+            menu.innerHTML = '';
+            
+            const filename = key.split('/').filter(Boolean).pop();
+            const escapedKey = key.replace(/'/g, "\\'");
+            const escapedName = filename.replace(/'/g, "\\'");
+            
+            let html = '';
+            
+            if (type === 'folder') {
+                html = `
+                    <button onclick="window.openFolder('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-folder-open text-blue-400 text-[10px] w-4 text-center"></i> Open Folder
+                    </button>
+                    <button onclick="window.downloadFolderAsZip('${escapedKey}', '${escapedName}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-file-archive text-amber-400 text-[10px] w-4 text-center"></i> Download ZIP
+                    </button>
+                    <button onclick="window.copyToClipboard('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-355 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-copy text-indigo-400 text-[10px] w-4 text-center"></i> Copy Folder
+                    </button>
+                    <button onclick="window.cutToClipboard('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-scissors text-purple-400 text-[10px] w-4 text-center"></i> Cut Folder
+                    </button>
+                    <div class="h-px bg-white/[0.03] my-1"></div>
+                    <button onclick="window.confirmDeleteFolder('${escapedKey}', '${escapedName}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-rose-455 text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-2.5">
+                        <i class="fas fa-trash text-[10px] w-4 text-center"></i> Delete Folder
+                    </button>
+                `;
+            } else {
+                const cleanKey = filename.split('?')[0].trim();
+                const ext = cleanKey.split('.').pop().toLowerCase().trim();
+                const isPlayable = ['mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', '3gp', 'flv', 'wmv', 'ts', 'ogv', 'm2ts', 'mp4v', 'mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'opus', 'wma', 'm4b', 'alac'].includes(ext);
+                const isPdf = ext === 'pdf';
+                
+                let openLabel = 'Open File';
+                let openIcon = 'fa-file';
+                if (isPlayable) {
+                    openLabel = 'Play Media';
+                    openIcon = 'fa-play text-emerald-400';
+                } else if (isPdf) {
+                    openLabel = 'Read PDF';
+                    openIcon = 'fa-file-pdf text-rose-400';
+                }
+                
+                html = `
+                    <button onclick="window.openFileItem('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas ${openIcon} text-[10px] w-4 text-center"></i> ${openLabel}
+                    </button>
+                    <button onclick="window.downloadFile('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-355 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-download text-blue-400 text-[10px] w-4 text-center"></i> Download
+                    </button>
+                    <button onclick="window.copyDownloadLink('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-link text-teal-400 text-[10px] w-4 text-center"></i> Share Link
+                    </button>
+                    <div class="h-px bg-white/[0.03] my-1"></div>
+                    <button onclick="window.copyToClipboard('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-copy text-indigo-400 text-[10px] w-4 text-center"></i> Copy File
+                    </button>
+                    <button onclick="window.cutToClipboard('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-scissors text-purple-400 text-[10px] w-4 text-center"></i> Cut File
+                    </button>
+                    <button onclick="window.openRenameModal('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-350 text-slate-300 hover:bg-white/[0.04] hover:text-white transition flex items-center gap-2.5">
+                        <i class="fas fa-edit text-amber-500 text-[10px] w-4 text-center"></i> Rename
+                    </button>
+                    <div class="h-px bg-white/[0.03] my-1"></div>
+                    <button onclick="window.confirmDelete('${escapedKey}'); document.getElementById('globalActionMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-xs font-semibold text-rose-455 text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-2.5">
+                        <i class="fas fa-trash text-[10px] w-4 text-center"></i> Delete
+                    </button>
+                `;
+            }
+            
+            menu.innerHTML = html;
+            menu.classList.remove('hidden');
+            
+            const rect = event.currentTarget.getBoundingClientRect();
+            const menuWidth = 176; 
+            const menuHeight = type === 'folder' ? 144 : 264; 
+            
+            let top = rect.bottom + window.scrollY;
+            let left = rect.right - menuWidth + window.scrollX;
+            
+            if (rect.bottom + menuHeight > window.innerHeight) {
+                top = rect.top - menuHeight + window.scrollY;
+            }
+            if (left < 0) {
+                left = rect.left + window.scrollX;
+            }
+            
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+        };
+
+        // Close global dropdown when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('globalActionMenu');
+            if (!e.target.closest('#globalActionMenu') && !e.target.closest('.action-menu-btn')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Selection Management
+        window.onItemSelect = (e) => {
+            e.stopPropagation();
+            const checkbox = e.currentTarget;
+            const key = checkbox.getAttribute('data-key');
+            const type = checkbox.getAttribute('data-type');
+            
+            if (checkbox.checked) {
+                if (!selectedItems.some(item => item.key === key)) {
+                    selectedItems.push({ key, type });
+                }
+            } else {
+                selectedItems = selectedItems.filter(item => item.key !== key);
+            }
+            
+            updateSelectionUI();
+        };
+
+        window.toggleSelectAll = (master) => {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => {
+                const key = cb.getAttribute('data-key');
+                const type = cb.getAttribute('data-type');
+                cb.checked = master.checked;
+                if (master.checked) {
+                    if (!selectedItems.some(item => item.key === key)) {
+                        selectedItems.push({ key, type });
+                    }
+                } else {
+                    selectedItems = selectedItems.filter(item => item.key !== key);
+                }
+            });
+            updateSelectionUI();
+        };
+
+        window.clearSelection = () => {
+            selectedItems = [];
+            updateSelectionUI();
+            
+            const master = document.getElementById('selectAllCheckbox');
+            if (master) master.checked = false;
+        };
+
+        function updateSelectionUI() {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => {
+                const key = cb.getAttribute('data-key');
+                cb.checked = selectedItems.some(item => item.key === key);
+                
+                // Highlight row
+                const row = cb.closest('tr');
+                if (row) {
+                    if (cb.checked) {
+                        row.classList.add('bg-blue-500/5', 'border-blue-500/25');
+                    } else {
+                        row.classList.remove('bg-blue-500/5', 'border-blue-500/25');
+                    }
+                }
+                
+                // Highlight card
+                const card = cb.closest('.group');
+                if (card) {
+                    if (cb.checked) {
+                        card.classList.add('border-blue-500/50', 'bg-blue-500/5');
+                        card.classList.remove('border-white/[0.04]');
+                    } else {
+                        card.classList.remove('border-blue-500/50', 'bg-blue-500/5');
+                        card.classList.add('border-white/[0.04]');
+                    }
+                }
+            });
+
+            // Update master checkbox check status
+            const master = document.getElementById('selectAllCheckbox');
+            if (master) {
+                const itemCheckboxes = document.querySelectorAll('#fileListBody .item-checkbox');
+                if (itemCheckboxes.length > 0) {
+                    master.checked = Array.from(itemCheckboxes).every(cb => cb.checked);
+                } else {
+                    master.checked = false;
+                }
+            }
+
+            // Update Selection Action Bar
+            const bar = document.getElementById('selectionBar');
+            const countLabel = document.getElementById('selectionCount');
+            
+            if (selectedItems.length > 0) {
+                countLabel.textContent = `${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} selected`;
+                
+                if (bar.classList.contains('hidden')) {
+                    bar.classList.remove('hidden');
+                    setTimeout(() => {
+                        bar.classList.remove('translate-y-10', 'opacity-0');
+                        bar.classList.add('translate-y-0', 'opacity-100');
+                    }, 10);
+                }
+            } else {
+                if (!bar.classList.contains('hidden')) {
+                    bar.classList.remove('translate-y-0', 'opacity-100');
+                    bar.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => {
+                        if (selectedItems.length === 0) {
+                            bar.classList.add('hidden');
+                        }
+                    }, 300);
+                }
+            }
+        }
+
+        // Byte formatting helper
+        const formatBytes = (bytes, decimals = 2) => {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        };
+
+        // Date formatting helper
+        const formatDate = (dateString) => {
+            if (!dateString) return '--';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + 
+                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        };
+
+        // File icon resolver
+        const getFileIcon = (fileName) => {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const iconMap = {
+                // Images
+                'png': { icon: 'fa-file-image text-teal-400', label: 'PNG Image' },
+                'jpg': { icon: 'fa-file-image text-teal-400', label: 'JPG Image' },
+                'jpeg': { icon: 'fa-file-image text-teal-400', label: 'JPEG Image' },
+                'gif': { icon: 'fa-file-image text-teal-400', label: 'GIF Image' },
+                'webp': { icon: 'fa-file-image text-teal-400', label: 'WebP Image' },
+                'svg': { icon: 'fa-file-image text-teal-400', label: 'SVG Graphics' },
+                
+                // Documents
+                'pdf': { icon: 'fa-file-pdf text-rose-500', label: 'PDF Document' },
+                'doc': { icon: 'fa-file-word text-blue-500', label: 'Word Document' },
+                'docx': { icon: 'fa-file-word text-blue-500', label: 'Word Document' },
+                'xls': { icon: 'fa-file-excel text-emerald-500', label: 'Excel Spreadsheet' },
+                'xlsx': { icon: 'fa-file-excel text-emerald-500', label: 'Excel Spreadsheet' },
+                'ppt': { icon: 'fa-file-powerpoint text-orange-500', label: 'PowerPoint Presentation' },
+                'pptx': { icon: 'fa-file-powerpoint text-orange-500', label: 'PowerPoint Presentation' },
+                'txt': { icon: 'fa-file-alt text-slate-400', label: 'Plain Text' },
+                
+                // Archives
+                'zip': { icon: 'fa-file-archive text-amber-500', label: 'ZIP Archive' },
+                'rar': { icon: 'fa-file-archive text-amber-500', label: 'RAR Archive' },
+                '7z': { icon: 'fa-file-archive text-amber-500', label: '7z Archive' },
+                'tar': { icon: 'fa-file-archive text-slate-400', label: 'TAR Archive' },
+                
+                // Audio & Video
+                'mp3': { icon: 'fa-file-audio text-cyan-400', label: 'MP3 Audio' },
+                'wav': { icon: 'fa-file-audio text-cyan-400', label: 'WAV Audio' },
+                'm4a': { icon: 'fa-file-audio text-cyan-400', label: 'M4A Audio' },
+                'ogg': { icon: 'fa-file-audio text-cyan-400', label: 'OGG Audio' },
+                'aac': { icon: 'fa-file-audio text-cyan-400', label: 'AAC Audio' },
+                'flac': { icon: 'fa-file-audio text-cyan-400', label: 'FLAC Audio' },
+                'mp4': { icon: 'fa-file-video text-violet-500', label: 'MP4 Video' },
+                'mkv': { icon: 'fa-file-video text-violet-500', label: 'MKV Video' },
+                'mov': { icon: 'fa-file-video text-violet-500', label: 'MOV Video' },
+                
+                // Codes
+                'html': { icon: 'fa-file-code text-indigo-400', label: 'HTML Webpage' },
+                'css': { icon: 'fa-file-code text-indigo-400', label: 'CSS Stylesheet' },
+                'js': { icon: 'fa-file-code text-indigo-400', label: 'JavaScript Code' },
+                'json': { icon: 'fa-file-code text-indigo-400', label: 'JSON Data' },
+                'py': { icon: 'fa-file-code text-indigo-400', label: 'Python Script' }
+            };
+            return iconMap[ext] || { icon: 'fa-file text-slate-405 text-slate-400', label: 'Generic File' };
+        };
+
+        // Toast Notification System
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const accentClass = 
+                type === 'success' ? 'border-l-4 border-emerald-500 bg-[#09090f]/95 text-emerald-400' :
+                type === 'error' ? 'border-l-4 border-rose-500 bg-[#09090f]/95 text-rose-400' :
+                'border-l-4 border-blue-500 bg-[#09090f]/95 text-blue-400';
+
+            toast.className = `flex items-center gap-3 px-4 py-3.5 rounded-xl border border-white/[0.04] shadow-2xl transform translate-y-[20px] opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl ${accentClass}`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            toast.innerHTML = `
+                <i class="fas ${icon} text-base shrink-0"></i>
+                <span class="text-xs font-semibold text-slate-200">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-[20px]', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        };
+
+        // ==========================================
+        // HTML5 Internal Drag and Drop handlers
+        // ==========================================
+        window.onFileDragStart = (e, key, type) => {
+            const isSelected = selectedItems.some(item => item.key === key);
+            let dragItems = [];
+            if (isSelected) {
+                dragItems = [...selectedItems];
+            } else {
+                dragItems = [{ key, type }];
+            }
+            
+            e.dataTransfer.setData('text/plain', JSON.stringify({ dragItems }));
+            e.dataTransfer.effectAllowed = 'move';
+            
+            dragItems.forEach(item => {
+                const cb = Array.from(document.querySelectorAll('.item-checkbox')).find(c => c.getAttribute('data-key') === item.key);
+                if (cb) {
+                    const row = cb.closest('tr');
+                    if (row) row.classList.add('opacity-30');
+                    const card = cb.closest('.group');
+                    if (card) card.classList.add('opacity-30');
+                }
+            });
+        };
+
+        window.onFileDragEnd = (e) => {
+            document.querySelectorAll('tr, .group').forEach(el => {
+                el.classList.remove('opacity-30');
+            });
+        };
+
+        window.onFolderDragOver = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const folderCard = e.currentTarget;
+            folderCard.classList.add('border-indigo-500/50', 'bg-indigo-500/5');
+        };
+
+        window.onFolderDragLeave = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const folderCard = e.currentTarget;
+            folderCard.classList.remove('border-indigo-500/50', 'bg-indigo-500/5');
+        };
+
+        window.onFolderDrop = async (e, destFolderKey) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const folderCard = e.currentTarget;
+            folderCard.classList.remove('border-indigo-500/50', 'bg-indigo-500/5');
+
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                let dragItems = [];
+                if (data.dragItems) {
+                    dragItems = data.dragItems;
+                } else if (data.key) {
+                    dragItems = [{ key: data.key, type: data.type }];
+                }
+
+                if (dragItems.length === 0) return;
+
+                const validItems = dragItems.filter(item => {
+                    if (item.key === destFolderKey) return false;
+                    if (item.type === 'folder' && destFolderKey.startsWith(item.key)) {
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (validItems.length < dragItems.length) {
+                    showToast("Some folders cannot be moved inside themselves.", "warning");
+                }
+
+                if (validItems.length > 0) {
+                    await moveMultipleItems(validItems, destFolderKey);
+                }
+            } catch (err) {
+                console.error("Drop parsing error:", err);
+            }
+        };
+
+        async function moveItem(sourceKey, sourceType, destFolderKey) {
+            await moveMultipleItems([{ key: sourceKey, type: sourceType }], destFolderKey);
+        }
+
+        async function moveMultipleItems(items, destFolderKey) {
+            try {
+                showToast(`Moving ${items.length} item(s)...`, 'info');
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const item of items) {
+                    const filename = item.key.split('/').filter(Boolean).pop() + (item.type === 'folder' ? '/' : '');
+                    const destKey = destFolderKey + filename;
+
+                    if (destKey === item.key) {
+                        continue;
+                    }
+
+                    try {
+                        if (item.type === 'file') {
+                            await s3.copyObject({
+                                Bucket: BUCKET_NAME,
+                                CopySource: getCopySource(BUCKET_NAME, item.key),
+                                Key: destKey
+                            }).promise();
+
+                            await s3.deleteObject({
+                                Bucket: BUCKET_NAME,
+                                Key: item.key
+                            }).promise();
+
+                            successCount++;
+                        } else {
+                            const oldPrefix = item.key;
+                            const newPrefix = destKey.endsWith('/') ? destKey : destKey + '/';
+                            const filesToMove = allFiles.filter(file => file.Key.startsWith(oldPrefix));
+
+                            for (let i = 0; i < filesToMove.length; i++) {
+                                const oldKey = filesToMove[i].Key;
+                                const relativePart = oldKey.substring(oldPrefix.length);
+                                const newKey = newPrefix + relativePart;
+
+                                await s3.copyObject({
+                                    Bucket: BUCKET_NAME,
+                                    CopySource: getCopySource(BUCKET_NAME, oldKey),
+                                    Key: newKey
+                                }).promise();
+
+                                await s3.deleteObject({
+                                    Bucket: BUCKET_NAME,
+                                    Key: oldKey
+                                }).promise();
+                            }
+                            successCount++;
+                        }
+                    } catch (err) {
+                        console.error(`Error moving item ${item.key}:`, err);
+                        failCount++;
+                    }
+                }
+
+                if (successCount > 0) {
+                    showToast(`Successfully moved ${successCount} item(s).`, 'success');
+                }
+                if (failCount > 0) {
+                    showToast(`Failed to move ${failCount} item(s).`, 'error');
+                }
+                
+                clearSelection();
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error in moveMultipleItems:", error);
+                showToast('Failed to move selected item(s).', 'error');
+            }
+        }
+
+        // ==========================================
+        // Fetch files from Cloudflare R2
+        // ==========================================
+        function updateStatusUI(isConnected) {
+            const statusInd = document.getElementById('statusIndicator');
+            const syncInd = document.getElementById('syncIndicator');
+            if (isConnected) {
+                if (statusInd) {
+                    statusInd.className = "flex items-center gap-1.5 text-emerald-400 text-xs font-semibold";
+                    statusInd.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span><span>Connected</span>';
+                }
+                if (syncInd) {
+                    syncInd.className = "flex items-center gap-1.5 text-indigo-400 text-xs font-semibold";
+                    syncInd.innerHTML = '<span class="w-2 h-2 bg-indigo-500 rounded-full animate-[pulse_1.5s_infinite]"></span><span>Sync Active</span>';
+                }
+            } else {
+                if (statusInd) {
+                    statusInd.className = "flex items-center gap-1.5 text-rose-400 text-xs font-semibold";
+                    statusInd.innerHTML = '<span class="w-2 h-2 bg-rose-500 rounded-full"></span><span>Disconnected</span>';
+                }
+                if (syncInd) {
+                    syncInd.className = "flex items-center gap-1.5 text-slate-500 text-xs font-semibold";
+                    syncInd.innerHTML = '<span class="w-2 h-2 bg-slate-600 rounded-full"></span><span>Offline</span>';
+                }
+            }
+        }
+
+        async function fetchFiles(silent = false) {
+            if (!s3 || !BUCKET_NAME) return;
+            if (!silent) {
+                const loadingHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-16 text-slate-500">
+                            <div class="flex flex-col items-center gap-3">
+                                <i class="fas fa-spinner fa-spin text-2xl text-indigo-400"></i>
+                                <span class="text-xs font-semibold">Loading vault from R2...</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                fileListBody.innerHTML = loadingHTML;
+                fileGridBody.innerHTML = `
+                    <div class="col-span-full text-center py-16 text-slate-500">
+                        <div class="flex flex-col items-center gap-3">
+                            <i class="fas fa-spinner fa-spin text-2xl text-indigo-400"></i>
+                            <span class="text-xs font-semibold">Loading vault from R2...</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            try {
+                const response = await s3.listObjectsV2({ Bucket: BUCKET_NAME }).promise();
+                const fetchedFiles = response.Contents || [];
+                
+                // Compare to see if there is any difference. If identical, skip DOM updates to prevent layout shift and selection clearing.
+                const newListStr = JSON.stringify(fetchedFiles.map(f => ({ Key: f.Key, Size: f.Size, LastModified: f.LastModified })));
+                if (window.lastFileListStr === newListStr) {
+                    updateStatusUI(true);
+                    return;
+                }
+                window.lastFileListStr = newListStr;
+
+                updateStatusUI(true);
+                allFiles = fetchedFiles;
+                renderFiles();
+            } catch (error) {
+                console.error("Error fetching files:", error);
+                updateStatusUI(false);
+                
+                if (!silent) {
+                    const errorHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-16 text-rose-400">
+                                <div class="flex flex-col items-center gap-3">
+                                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                                    <span class="font-semibold text-sm">Failed to connect to R2 Storage!</span>
+                                    <span class="text-xs text-slate-400">Please check your keys, endpoints, and CORS configurations.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    fileListBody.innerHTML = errorHTML;
+                    fileGridBody.innerHTML = `
+                        <div class="col-span-full text-center py-16 text-rose-455 text-rose-400">
+                            <div class="flex flex-col items-center gap-3">
+                                <i class="fas fa-exclamation-circle text-3xl"></i>
+                                <span class="font-semibold text-sm">Failed to connect to R2 Storage!</span>
+                                <span class="text-xs text-slate-400">Please check your keys, endpoints, and CORS configurations.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // ==========================================
+        // Render Breadcrumbs UI
+        // ==========================================
+        function renderBreadcrumbs() {
+            breadcrumbs.innerHTML = '';
+            
+            const homeBtn = document.createElement('button');
+            homeBtn.className = `text-xs font-bold hover:text-indigo-400 transition flex items-center gap-1.5 ${currentPath === '' ? 'text-indigo-400' : 'text-slate-400'}`;
+            homeBtn.innerHTML = '<i class="fas fa-home"></i> Home';
+            homeBtn.addEventListener('click', () => {
+                if (marqueeDragStarted) return;
+                currentPath = '';
+                renderFiles();
+            });
+            breadcrumbs.appendChild(homeBtn);
+
+            if (currentPath === '') return;
+
+            const parts = currentPath.split('/').filter(p => p !== '');
+            let accumulatedPath = '';
+
+            parts.forEach((part, index) => {
+                accumulatedPath += part + '/';
+                const tempPath = accumulatedPath;
+
+                const separator = document.createElement('span');
+                separator.className = 'text-[9px] mx-1 text-slate-600';
+                separator.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                breadcrumbs.appendChild(separator);
+
+                const folderBtn = document.createElement('button');
+                folderBtn.className = `text-xs font-semibold hover:text-indigo-400 transition font-mono ${index === parts.length - 1 ? 'text-indigo-400' : 'text-slate-400'}`;
+                folderBtn.textContent = part;
+                folderBtn.addEventListener('click', () => {
+                    if (marqueeDragStarted) return;
+                    currentPath = tempPath;
+                    renderFiles();
+                });
+                breadcrumbs.appendChild(folderBtn);
+            });
+        }
+
+        window.openFolder = (folderKey) => {
+            if (marqueeDragStarted) return;
+            currentPath = folderKey;
+            searchInput.value = ''; 
+            renderFiles();
+        };
+
+        // ==========================================
+        // Render Files explorer
+        // ==========================================
+        function renderFiles() {
+            const query = searchInput.value.trim().toLowerCase();
+            renderBreadcrumbs();
+
+            let filtered = [];
+
+            if (query !== '') {
+                filtered = allFiles.filter(file => {
+                    return !file.Key.endsWith('/') && file.Key.toLowerCase().includes(query);
+                }).map(file => {
+                    return {
+                        Key: file.Key,
+                        Name: file.Key, 
+                        Size: file.Size,
+                        LastModified: file.LastModified,
+                        Type: 'file'
+                    };
+                });
+            } else {
+                const itemsMap = new Map();
+
+                allFiles.forEach(file => {
+                    const key = file.Key;
+
+                    if (key.startsWith(currentPath) && key !== currentPath) {
+                        const relativePart = key.substring(currentPath.length);
+                        const slashIndex = relativePart.indexOf('/');
+
+                        if (slashIndex === -1) {
+                            itemsMap.set(relativePart, {
+                                Key: key,
+                                Name: relativePart,
+                                Size: file.Size,
+                                LastModified: file.LastModified,
+                                Type: 'file'
+                            });
+                        } else {
+                            const folderName = relativePart.substring(0, slashIndex + 1);
+                            const folderKey = currentPath + folderName;
+
+                            if (!itemsMap.has(folderName)) {
+                                itemsMap.set(folderName, {
+                                    Key: folderKey,
+                                    Name: folderName.slice(0, -1),
+                                    Size: 0,
+                                    LastModified: null,
+                                    Type: 'folder'
+                                });
+                            }
+                        }
+                    }
+                });
+
+                filtered = Array.from(itemsMap.values());
+            }
+
+            // Enforce Folders always first sorting: folders first, then files. 
+            // Within each category, sort alphabetically by Name.
+            filtered.sort((a, b) => {
+                if (a.Type === 'folder' && b.Type !== 'folder') return -1;
+                if (a.Type !== 'folder' && b.Type === 'folder') return 1;
+                return a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base', numeric: true });
+            });
+
+            // Filter hidden files/folders (starting with .) if showHiddenFiles is false
+            if (!showHiddenFiles) {
+                filtered = filtered.filter(item => !isItemHidden(item.Key, item.Name));
+            }
+
+            // Update stats indicators
+            const totalFiles = allFiles.filter(f => !f.Key.endsWith('/')).length;
+            document.getElementById('totalFilesStat').textContent = totalFiles;
+            
+            const totalSize = allFiles.filter(f => !f.Key.endsWith('/')).reduce((acc, cur) => acc + cur.Size, 0);
+            document.getElementById('totalSizeStat').textContent = formatBytes(totalSize);
+
+            // Update Sidebar Linear Progress meter
+            const limit = 10 * 1024 * 1024 * 1024; // 10 GB
+            const percentage = Math.min(100, (totalSize / limit) * 100);
+            const progressBar = document.getElementById('sidebarStorageBar');
+            if (progressBar) {
+                progressBar.style.width = `${percentage}%`;
+            }
+
+            // Empty state check
+            if (filtered.length === 0) {
+                const emptyHTML = `
+                    <div class="flex flex-col items-center justify-center py-16 text-slate-500 gap-3 text-center w-full">
+                        <i class="fas fa-folder-open text-4xl opacity-20"></i>
+                        <p class="font-medium text-xs">${query ? 'No matching files found.' : 'This folder is empty.'}</p>
+                    </div>
+                `;
+                fileListBody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-500">${emptyHTML}</td></tr>`;
+                fileGridBody.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">${emptyHTML}</div>`;
+                return;
+            }
+
+            fileListBody.innerHTML = '';
+            fileGridBody.innerHTML = '';
+
+            filtered.forEach(item => {
+                const isCut = (item.Key === clipboardFileKey && clipboardAction === 'cut') || 
+                              (clipboardItems.some(ci => ci.key === item.Key) && clipboardAction === 'cut');
+
+                // Escape values for JS string templates and HTML attributes
+                const jsEscapedKey = item.Key.replace(/'/g, "\\'");
+                const htmlEscapedKey = item.Key.replace(/"/g, '&quot;');
+
+                if (item.Type === 'folder') {
+                    // --- Render Folder row (List View) ---
+                    const row = document.createElement('tr');
+                    row.className = `hover:bg-white/[0.02] border-b border-white/[0.02] transition-colors duration-200 ${isCut ? 'opacity-30 font-style-italic' : ''}`;
+                    row.setAttribute('ondragover', `window.onFolderDragOver(event)`);
+                    row.setAttribute('ondragleave', `window.onFolderDragLeave(event)`);
+                    row.setAttribute('ondrop', `window.onFolderDrop(event, '${jsEscapedKey}')`);
+
+                    row.innerHTML = `
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-400 w-12">
+                            <input type="checkbox" class="item-checkbox w-4 h-4 rounded border-white/10 bg-slate-900 text-blue-600 focus:ring-blue-500 transition duration-200" data-key="${htmlEscapedKey}" data-type="folder" onclick="window.onItemSelect(event)">
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs font-semibold text-slate-200">
+                            <div class="flex items-center gap-3 cursor-pointer" onclick="window.openFolder('${jsEscapedKey}')">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0" draggable="true" ondragstart="window.onFileDragStart(event, '${jsEscapedKey}', 'folder')" ondragend="window.onFileDragEnd(event)">
+                                    <i class="fas fa-folder text-sm text-amber-500"></i>
+                                </div>
+                                <span class="truncate max-w-xs md:max-w-md font-mono hover:text-indigo-400">${item.Name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-500 font-mono">--</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-500 font-medium">--</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-center text-xs font-medium w-16">
+                            <button onclick="window.showActionMenu(event, '${jsEscapedKey}', 'folder')" class="action-menu-btn w-8 h-8 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition flex items-center justify-center mx-auto relative z-20" title="Actions">
+                                <i class="fas fa-ellipsis-v text-xs"></i>
+                            </button>
+                        </td>
+                    `;
+                    fileListBody.appendChild(row);
+
+                    // --- Render Folder card (Grid View) ---
+                    const card = document.createElement('div');
+                    card.className = `group bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] hover:border-amber-500/25 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-amber-500/5 relative overflow-hidden cursor-pointer ${isCut ? 'opacity-30' : ''}`;
+                    card.setAttribute('ondragover', `window.onFolderDragOver(event)`);
+                    card.setAttribute('ondragleave', `window.onFolderDragLeave(event)`);
+                    card.setAttribute('ondrop', `window.onFolderDrop(event, '${jsEscapedKey}')`);
+
+                    card.addEventListener('click', (e) => {
+                        if (marqueeDragStarted) return;
+                        if (!e.target.closest('button') && !e.target.closest('input[type="checkbox"]') && !e.target.closest('[draggable="true"]')) {
+                            window.openFolder(item.Key);
+                        }
+                    });
+                    
+                    const cardLight = document.createElement('div');
+                    cardLight.className = 'absolute -right-12 -top-12 w-28 h-28 bg-amber-500/[0.02] rounded-full blur-xl group-hover:bg-amber-500/[0.04] transition-all duration-300';
+                    card.appendChild(cardLight);
+
+                    card.innerHTML += `
+                        <input type="checkbox" class="item-checkbox absolute top-4 left-4 z-20 w-4 h-4 rounded border-white/10 bg-slate-900/60 text-blue-600 focus:ring-blue-500 transition duration-200 opacity-0 group-hover:opacity-100 checked:opacity-100" data-key="${htmlEscapedKey}" data-type="folder" onclick="window.onItemSelect(event)">
+                        <div class="flex items-start justify-between relative z-10 pl-6 w-full">
+                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                                <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0" draggable="true" ondragstart="window.onFileDragStart(event, '${jsEscapedKey}', 'folder')" ondragend="window.onFileDragEnd(event)">
+                                    <i class="fas fa-folder text-xl text-amber-500"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-slate-200 font-semibold text-sm truncate font-mono text-left" dir="ltr" title="${item.Name}">${item.Name}</h4>
+                                    <p class="text-[10px] text-slate-405 text-slate-400 font-medium text-left font-sans">Folder</p>
+                                </div>
+                            </div>
+                            <!-- Actions menu button -->
+                            <button onclick="window.showActionMenu(event, '${jsEscapedKey}', 'folder')" class="action-menu-btn w-8 h-8 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition flex items-center justify-center shrink-0 relative z-20" title="Actions">
+                                <i class="fas fa-ellipsis-v text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    fileGridBody.appendChild(card);
+                } else {
+                    // --- Render File row (List View) ---
+                    const fileInfo = getFileIcon(item.Name);
+                    
+                    const row = document.createElement('tr');
+                    row.className = `hover:bg-white/[0.02] border-b border-white/[0.02] transition-colors duration-200 ${isCut ? 'opacity-30 font-style-italic' : ''}`;
+
+                    row.innerHTML = `
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-400 w-12">
+                            <input type="checkbox" class="item-checkbox w-4 h-4 rounded border-white/10 bg-slate-900 text-blue-600 focus:ring-blue-500 transition duration-200" data-key="${htmlEscapedKey}" data-type="file" onclick="window.onItemSelect(event)">
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs font-semibold text-slate-200">
+                            <div class="flex items-center gap-3 cursor-pointer" onclick="window.openFileItem('${jsEscapedKey}')">
+                                <div class="w-8 h-8 rounded-lg bg-white/[0.02] flex items-center justify-center border border-white/5 shrink-0" draggable="true" ondragstart="window.onFileDragStart(event, '${jsEscapedKey}', 'file')" ondragend="window.onFileDragEnd(event)">
+                                    <i class="fas ${fileInfo.icon} text-base"></i>
+                                </div>
+                                <span class="truncate max-w-xs md:max-w-md font-mono hover:text-indigo-400 cursor-pointer select-all" dir="ltr" title="${item.Key}">${item.Name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-400 font-mono">${formatBytes(item.Size)}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-xs text-slate-400 font-medium">${formatDate(item.LastModified)}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-center text-xs font-medium w-16">
+                            <button onclick="window.showActionMenu(event, '${jsEscapedKey}', 'file')" class="action-menu-btn w-8 h-8 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition flex items-center justify-center mx-auto relative z-20" title="Actions">
+                                <i class="fas fa-ellipsis-v text-xs"></i>
+                            </button>
+                        </td>
+                    `;
+                    fileListBody.appendChild(row);
+
+                    // --- Render File card (Grid View) ---
+                    const card = document.createElement('div');
+                    card.className = `group bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] hover:border-blue-500/25 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/5 relative overflow-hidden cursor-pointer ${isCut ? 'opacity-30' : ''}`;
+                    
+                    card.addEventListener('click', (e) => {
+                        if (marqueeDragStarted) return;
+                        if (!e.target.closest('button') && !e.target.closest('input[type="checkbox"]') && !e.target.closest('[draggable="true"]')) {
+                            window.openFileItem(item.Key);
+                        }
+                    });
+
+                    const cardLight = document.createElement('div');
+                    cardLight.className = 'absolute -right-12 -top-12 w-28 h-28 bg-blue-500/[0.01] rounded-full blur-xl group-hover:bg-blue-500/[0.03] transition-all duration-300';
+                    card.appendChild(cardLight);
+
+                    card.innerHTML += `
+                        <input type="checkbox" class="item-checkbox absolute top-4 left-4 z-20 w-4 h-4 rounded border-white/10 bg-slate-900/60 text-blue-600 focus:ring-blue-500 transition duration-200 opacity-0 group-hover:opacity-100 checked:opacity-100" data-key="${htmlEscapedKey}" data-type="file" onclick="window.onItemSelect(event)">
+                        <div class="flex items-start justify-between relative z-10 pl-6 w-full">
+                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                                <div class="w-11 h-11 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center shrink-0 shadow-inner" draggable="true" ondragstart="window.onFileDragStart(event, '${jsEscapedKey}', 'file')" ondragend="window.onFileDragEnd(event)">
+                                    <i class="fas ${fileInfo.icon} text-xl"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-slate-200 font-semibold text-sm truncate font-mono text-left" dir="ltr" title="${item.Name}">${item.Name}</h4>
+                                    <p class="text-[10px] text-slate-400 font-medium text-left font-sans">${fileInfo.label}</p>
+                                </div>
+                            </div>
+                            <!-- Actions menu button -->
+                            <button onclick="window.showActionMenu(event, '${jsEscapedKey}', 'file')" class="action-menu-btn w-8 h-8 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition flex items-center justify-center shrink-0 relative z-20" title="Actions">
+                                <i class="fas fa-ellipsis-v text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-col gap-1.5 border-t border-white/[0.03] pt-3.5 relative z-10 text-[11px]">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Size:</span>
+                                <span class="text-slate-200 font-mono font-medium">${formatBytes(item.Size)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Modified:</span>
+                                <span class="text-slate-350 truncate max-w-[150px] font-medium" title="${formatDate(item.LastModified)}">${formatDate(item.LastModified)}</span>
+                            </div>
+                        </div>
+                    `;
+                    fileGridBody.appendChild(card);
+                }
+            });
+
+            // Adjust view display
+            if (currentView === 'list') {
+                fileTableContainer.classList.remove('hidden');
+                fileGridContainer.classList.add('hidden');
+            } else {
+                fileTableContainer.classList.add('hidden');
+                fileGridContainer.classList.remove('hidden');
+            }
+
+            updateSelectionUI();
+        }
+
+        // ==========================================
+        // Upload trigger and operations
+        // ==========================================
+        let uploadQueue = [];
+        let isUploading = false;
+        let totalQueueBatchSize = 0;
+
+        window.triggerFileInput = () => {
+            fileInput.click();
+        };
+
+        window.triggerFolderInput = () => {
+            if (folderInput) folderInput.click();
+        };
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                enqueueUploads(Array.from(e.target.files));
+                fileInput.value = ''; 
+            }
+        });
+
+        if (folderInput) {
+            folderInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const files = Array.from(e.target.files);
+                    files.forEach(file => {
+                        if (file.webkitRelativePath) {
+                            file.relativePath = file.webkitRelativePath;
+                        }
+                    });
+                    enqueueUploads(files);
+                    folderInput.value = '';
+                }
+            });
+        }
+
+        // ==========================================
+        // Global Drag and Drop Event listeners
+        // ==========================================
+        const globalDragOverlay = document.getElementById('globalDragOverlay');
+        let dragCounter = 0;
+
+        window.addEventListener('dragenter', (e) => {
+            if (!e.dataTransfer.types || !e.dataTransfer.types.includes('Files')) {
+                return;
+            }
+            e.preventDefault();
+            dragCounter++;
+            if (dragCounter === 1) {
+                globalDragOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    globalDragOverlay.classList.remove('opacity-0');
+                    globalDragOverlay.classList.add('opacity-100');
+                    globalDragOverlay.querySelector('div').classList.remove('scale-95');
+                    globalDragOverlay.querySelector('div').classList.add('scale-100');
+                }, 10);
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            if (!e.dataTransfer.types || !e.dataTransfer.types.includes('Files')) {
+                return;
+            }
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                globalDragOverlay.classList.remove('opacity-100');
+                globalDragOverlay.classList.add('opacity-0');
+                globalDragOverlay.querySelector('div').classList.remove('scale-100');
+                globalDragOverlay.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    if (dragCounter === 0) {
+                        globalDragOverlay.classList.add('hidden');
+                    }
+                }, 300);
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            if (!e.dataTransfer.types || !e.dataTransfer.types.includes('Files')) {
+                return;
+            }
+            e.preventDefault();
+        });
+
+        // Helper to recursively traverse HTML5 FileSystem Directory Entries (Drag & Drop folders)
+        async function readEntriesRecursively(entries) {
+            const fileList = [];
+
+            async function traverseEntry(entry, path = '') {
+                if (entry.isFile) {
+                    return new Promise((resolve) => {
+                        entry.file((file) => {
+                            file.relativePath = path + file.name;
+                            fileList.push(file);
+                            resolve();
+                        }, (err) => {
+                            console.error("Error reading file entry:", err);
+                            resolve();
+                        });
+                    });
+                } else if (entry.isDirectory) {
+                    const dirReader = entry.createReader();
+                    const readAllEntries = async () => {
+                        return new Promise((resolve) => {
+                            dirReader.readEntries(async (subEntries) => {
+                                if (subEntries.length === 0) {
+                                    resolve();
+                                } else {
+                                    for (const subEntry of subEntries) {
+                                        await traverseEntry(subEntry, path + entry.name + '/');
+                                    }
+                                    await readAllEntries();
+                                    resolve();
+                                }
+                            }, (err) => {
+                                console.error("Error reading directory entries:", err);
+                                resolve();
+                            });
+                        });
+                    };
+                    await readAllEntries();
+                }
+            }
+
+            for (const entry of entries) {
+                await traverseEntry(entry, '');
+            }
+
+            return fileList;
+        }
+
+        window.addEventListener('drop', async (e) => {
+            if (!e.dataTransfer.types || !e.dataTransfer.types.includes('Files')) {
+                return;
+            }
+            e.preventDefault();
+            dragCounter = 0;
+            globalDragOverlay.classList.remove('opacity-100');
+            globalDragOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                globalDragOverlay.classList.add('hidden');
+            }, 300);
+
+            const items = e.dataTransfer.items;
+            if (items && items.length > 0) {
+                const entries = [];
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    if (item.kind === 'file') {
+                        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : (item.getAsEntry ? item.getAsEntry() : null);
+                        if (entry) entries.push(entry);
+                    }
+                }
+                if (entries.length > 0) {
+                    showToast('Reading dropped items and subfolders...', 'info');
+                    const filesToUpload = await readEntriesRecursively(entries);
+                    if (filesToUpload.length > 0) {
+                        enqueueUploads(filesToUpload);
+                    } else {
+                        showToast('Dropped folder is empty.', 'warning');
+                    }
+                    return;
+                }
+            }
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                enqueueUploads(Array.from(files));
+            }
+        });
+
+        // ==========================================
+        // Core Upload Queue Logic
+        // ==========================================
+        function enqueueUploads(files) {
+            const wasEmpty = uploadQueue.length === 0;
+            for (let i = 0; i < files.length; i++) {
+                uploadQueue.push(files[i]);
+            }
+            if (wasEmpty) {
+                totalQueueBatchSize = uploadQueue.length;
+            } else {
+                totalQueueBatchSize += files.length;
+            }
+            processUploadQueue();
+        }
+
+        async function processUploadQueue() {
+            if (isUploading || uploadQueue.length === 0) {
+                return;
+            }
+
+            isUploading = true;
+            const file = uploadQueue[0];
+
+            const widget = document.getElementById('uploadProgressWidget');
+            const widgetTitle = document.getElementById('widgetTitle');
+            const widgetFileName = document.getElementById('widgetFileName');
+            const widgetFileSize = document.getElementById('widgetFileSize');
+            const widgetProgressBar = document.getElementById('widgetProgressBar');
+            const widgetStatusText = document.getElementById('widgetStatusText');
+            const widgetProgressPercent = document.getElementById('widgetProgressPercent');
+
+            widgetProgressBar.classList.remove('bg-emerald-500', 'bg-rose-500');
+            widgetProgressBar.classList.add('bg-indigo-500');
+
+            widgetFileName.textContent = file.relativePath || file.name;
+            widgetFileSize.textContent = formatBytes(file.size);
+            widgetProgressBar.style.width = '0%';
+            widgetProgressPercent.textContent = '0%';
+            widgetStatusText.textContent = 'Uploading...';
+
+            const remaining = uploadQueue.length;
+            const completedCount = totalQueueBatchSize - remaining + 1;
+            
+            if (totalQueueBatchSize > 1) {
+                widgetTitle.textContent = `Uploading ${completedCount} of ${totalQueueBatchSize} items`;
+            } else {
+                widgetTitle.textContent = 'Uploading 1 item';
+            }
+
+            widget.classList.remove('hidden');
+            setTimeout(() => {
+                widget.classList.remove('translate-y-2', 'opacity-0');
+                widget.classList.add('opacity-100');
+            }, 10);
+
+            const relativePathKey = file.relativePath || file.name;
+            const uploadKey = currentPath + relativePathKey;
+
+            try {
+                const upload = s3.upload({
+                    Bucket: BUCKET_NAME,
+                    Key: uploadKey,
+                    Body: file,
+                    ContentType: file.type || 'application/octet-stream'
+                });
+
+                upload.on('httpUploadProgress', (evt) => {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    widgetProgressBar.style.width = percent + '%';
+                    widgetProgressPercent.textContent = percent + '%';
+                });
+
+                await upload.promise();
+
+                showToast(`"${file.name}" uploaded successfully!`, 'success');
+                
+                uploadQueue.shift();
+                isUploading = false;
+
+                if (uploadQueue.length > 0) {
+                    processUploadQueue();
+                } else {
+                    widgetStatusText.textContent = 'Completed';
+                    widgetTitle.textContent = `${totalQueueBatchSize} upload${totalQueueBatchSize > 1 ? 's' : ''} complete`;
+                    widgetProgressBar.classList.remove('bg-indigo-500');
+                    widgetProgressBar.classList.add('bg-emerald-500');
+                    
+                    totalQueueBatchSize = 0;
+                    setTimeout(() => {
+                        window.closeProgressWidget();
+                    }, 4000);
+                }
+
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                showToast(`Failed to upload "${file.name}".`, 'error');
+                
+                widgetStatusText.textContent = 'Failed';
+                widgetTitle.textContent = 'Upload failed';
+                widgetProgressBar.classList.remove('bg-indigo-500');
+                widgetProgressBar.classList.add('bg-rose-500');
+
+                uploadQueue.shift();
+                isUploading = false;
+
+                if (uploadQueue.length > 0) {
+                    setTimeout(() => {
+                        processUploadQueue();
+                    }, 2000);
+                } else {
+                    totalQueueBatchSize = 0;
+                    setTimeout(() => {
+                        window.closeProgressWidget();
+                    }, 4000);
+                }
+            }
+        }
+
+        window.closeProgressWidget = () => {
+            const widget = document.getElementById('uploadProgressWidget');
+            widget.classList.remove('opacity-100');
+            widget.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => {
+                widget.classList.add('hidden');
+                const bar = document.getElementById('widgetProgressBar');
+                bar.classList.remove('bg-emerald-500', 'bg-rose-500');
+                bar.classList.add('bg-indigo-500');
+            }, 300);
+        };
+
+        // ==========================================
+        // Download File
+        // ==========================================
+        window.downloadFile = (fileKey) => {
+            try {
+                const filename = fileKey.split('/').filter(Boolean).pop();
+                const signedUrl = s3.getSignedUrl('getObject', {
+                    Bucket: BUCKET_NAME,
+                    Key: fileKey,
+                    Expires: 300,
+                    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(filename)}"`
+                });
+                
+                const a = document.createElement('a');
+                a.href = signedUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('Starting file download...', 'success');
+            } catch (error) {
+                console.error("Error downloading file:", error);
+                showToast('Failed to generate download link.', 'error');
+            }
+        };
+
+        // ==========================================
+        // Download Folder as ZIP (Client-Side via JSZip)
+        // ==========================================
+        window.downloadFolderAsZip = async (folderKey, folderName) => {
+            try {
+                showToast(`Preparing ZIP for folder "${folderName}"...`, 'info');
+
+                const filesInFolder = allFiles.filter(file => file.Key.startsWith(folderKey) && !file.Key.endsWith('/'));
+
+                if (filesInFolder.length === 0) {
+                    showToast(`Folder "${folderName}" is empty! Nothing to compress.`, 'warning');
+                    return;
+                }
+
+                if (typeof JSZip === 'undefined') {
+                    showToast('JSZip library is loading. Please try again in a moment.', 'error');
+                    return;
+                }
+
+                const zip = new JSZip();
+                let loadedCount = 0;
+
+                showToast(`Compressing ${filesInFolder.length} file(s)...`, 'info');
+
+                for (const file of filesInFolder) {
+                    try {
+                        const signedUrl = s3.getSignedUrl('getObject', {
+                            Bucket: BUCKET_NAME,
+                            Key: file.Key,
+                            Expires: 300
+                        });
+
+                        const response = await fetch(signedUrl);
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+
+                        const blob = await response.blob();
+                        const relativePath = file.Key.substring(folderKey.length);
+
+                        zip.file(relativePath, blob);
+                        loadedCount++;
+
+                        if (filesInFolder.length > 3) {
+                            showToast(`Zipping files (${loadedCount}/${filesInFolder.length})...`, 'info');
+                        }
+                    } catch (fileErr) {
+                        console.error(`Failed to fetch file ${file.Key} for zip:`, fileErr);
+                    }
+                }
+
+                if (loadedCount === 0) {
+                    showToast('Failed to download any files from the folder.', 'error');
+                    return;
+                }
+
+                showToast('Generating ZIP archive...', 'info');
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+                const zipFilename = `${folderName.replace(/[/\\?%*:|"<>]/g, '_')}.zip`;
+                const downloadLink = document.createElement('a');
+                const blobUrl = URL.createObjectURL(zipBlob);
+                downloadLink.href = blobUrl;
+                downloadLink.download = zipFilename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                showToast(`"${zipFilename}" downloaded successfully!`, 'success');
+            } catch (error) {
+                console.error("Error creating zip archive:", error);
+                showToast('Failed to create ZIP archive.', 'error');
+            }
+        };
+
+        // ==========================================
+        // Delete operations
+        // ==========================================
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmModalCard = document.getElementById('confirmModalCard');
+        const confirmModalFileName = document.getElementById('confirmModalFileName');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        // Delete single file
+        window.confirmDelete = (fileKey) => {
+            pendingDeleteKey = fileKey;
+            confirmModalFileName.textContent = `file "${fileKey.split('/').pop()}"`;
+            
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                confirmModal.classList.remove('opacity-0');
+                confirmModal.classList.add('opacity-100');
+                confirmModalCard.classList.remove('scale-95');
+                confirmModalCard.classList.add('scale-100');
+            }, 10);
+        };
+
+        // Delete folder cascade
+        window.confirmDeleteFolder = (folderKey, folderName) => {
+            pendingDeleteKey = folderKey;
+            confirmModalFileName.textContent = `folder "${folderName}" and all of its contents`;
+            
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                confirmModal.classList.remove('opacity-0');
+                confirmModal.classList.add('opacity-100');
+                confirmModalCard.classList.remove('scale-95');
+                confirmModalCard.classList.add('scale-100');
+            }, 10);
+        };
+
+        const closeConfirmModal = () => {
+            confirmModal.classList.remove('opacity-100');
+            confirmModal.classList.add('opacity-0');
+            confirmModalCard.classList.remove('scale-100');
+            confirmModalCard.classList.add('scale-95');
+            
+            setTimeout(() => {
+                confirmModal.classList.add('hidden');
+                pendingDeleteKey = null;
+            }, 300);
+        };
+
+        cancelDeleteBtn.addEventListener('click', closeConfirmModal);
+        
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) closeConfirmModal();
+        });
+
+        // Helper function for resilient delete operations (tries deleteObjects with automatic fallback to deleteObject)
+        async function deleteKeysFromR2(keys) {
+            if (!keys || keys.length === 0) return { successCount: 0, failCount: 0 };
+            
+            // Deduplicate keys array
+            const uniqueKeys = Array.from(new Set(keys));
+            let successCount = 0;
+            let failCount = 0;
+
+            // Attempt batch delete first if there are multiple keys
+            if (uniqueKeys.length > 1) {
+                try {
+                    const batchSize = 1000;
+                    for (let i = 0; i < uniqueKeys.length; i += batchSize) {
+                        const chunk = uniqueKeys.slice(i, i + batchSize).map(k => ({ Key: k }));
+                        await s3.deleteObjects({
+                            Bucket: BUCKET_NAME,
+                            Delete: { Objects: chunk }
+                        }).promise();
+                    }
+                    return { successCount: uniqueKeys.length, failCount: 0 };
+                } catch (batchErr) {
+                    console.warn("Batch deleteObjects failed (likely CORS or R2 POST restriction). Falling back to individual deleteObject calls:", batchErr);
+                }
+            }
+
+            // Fallback / Individual deletion loop via HTTP DELETE
+            for (const key of uniqueKeys) {
+                try {
+                    await s3.deleteObject({
+                        Bucket: BUCKET_NAME,
+                        Key: key
+                    }).promise();
+                    successCount++;
+                } catch (err) {
+                    console.error(`Failed to delete key: ${key}`, err);
+                    failCount++;
+                }
+            }
+
+            return { successCount, failCount };
+        }
+
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (!pendingDeleteKey) return;
+            const targetKey = pendingDeleteKey;
+            closeConfirmModal();
+
+            try {
+                if (targetKey === "selected_items") {
+                    showToast('Deleting selected items...', 'info');
+                    
+                    let keysToDelete = [];
+                    for (const item of selectedItems) {
+                        if (item.type === 'folder') {
+                            const subKeys = allFiles
+                                .filter(file => file.Key.startsWith(item.key))
+                                .map(file => file.Key);
+                            if (subKeys.length > 0) {
+                                keysToDelete.push(...subKeys);
+                            } else {
+                                keysToDelete.push(item.key);
+                            }
+                        } else {
+                            keysToDelete.push(item.key);
+                        }
+                    }
+
+                    const { successCount, failCount } = await deleteKeysFromR2(keysToDelete);
+
+                    if (successCount > 0) {
+                        showToast(`Successfully deleted ${selectedItems.length} item(s).`, 'success');
+                    }
+                    if (failCount > 0) {
+                        showToast(`Failed to delete ${failCount} item(s).`, 'error');
+                    }
+
+                    clearSelection();
+                } else if (targetKey.endsWith('/')) {
+                    showToast('Deleting folder and its contents...', 'info');
+                    
+                    const subKeys = allFiles
+                        .filter(file => file.Key.startsWith(targetKey))
+                        .map(file => file.Key);
+                    
+                    const keysToDelete = subKeys.length > 0 ? subKeys : [targetKey];
+                    const { successCount, failCount } = await deleteKeysFromR2(keysToDelete);
+
+                    if (successCount > 0) {
+                        showToast('Folder deleted successfully.', 'success');
+                    } else {
+                        showToast('Failed to delete folder.', 'error');
+                    }
+                } else {
+                    const { successCount } = await deleteKeysFromR2([targetKey]);
+                    if (successCount > 0) {
+                        showToast(`"${targetKey.split('/').pop()}" deleted successfully.`, 'success');
+                    } else {
+                        showToast(`Failed to delete "${targetKey.split('/').pop()}".`, 'error');
+                    }
+                }
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error deleting from R2:", error);
+                showToast('Failed to delete selected item(s).', 'error');
+            }
+        });
+
+        // ==========================================
+        // Copy, Cut and Paste actions
+        // ==========================================
+        window.copyToClipboard = (fileKey) => {
+            clipboardItems = [{ key: fileKey, type: fileKey.endsWith('/') ? 'folder' : 'file' }];
+            clipboardAction = 'copy';
+            clipboardFileKey = fileKey;
+            const filename = fileKey.split('/').filter(Boolean).pop();
+            showToast(`Copied "${filename}" to clipboard.`, 'success');
+            
+            pasteBtn.disabled = false;
+            pasteBtn.className = "p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.02] border border-white/5 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-100";
+            
+            renderFiles();
+        };
+
+        window.cutToClipboard = (fileKey) => {
+            clipboardItems = [{ key: fileKey, type: fileKey.endsWith('/') ? 'folder' : 'file' }];
+            clipboardAction = 'cut';
+            clipboardFileKey = fileKey;
+            const filename = fileKey.split('/').filter(Boolean).pop();
+            showToast(`Cut "${filename}" to clipboard.`, 'info');
+
+            pasteBtn.disabled = false;
+            pasteBtn.className = "p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.02] border border-white/5 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-100";
+
+            renderFiles();
+        };
+
+        window.cutSelected = () => {
+            if (selectedItems.length === 0) return;
+            clipboardItems = [...selectedItems];
+            clipboardAction = 'cut';
+            clipboardFileKey = null;
+            
+            showToast(`Cut ${clipboardItems.length} item(s) to clipboard.`, 'info');
+            
+            pasteBtn.disabled = false;
+            pasteBtn.className = "p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.02] border border-white/5 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-100";
+            
+            renderFiles();
+            clearSelection();
+        };
+
+        window.copySelected = () => {
+            if (selectedItems.length === 0) return;
+            clipboardItems = [...selectedItems];
+            clipboardAction = 'copy';
+            clipboardFileKey = null;
+            
+            showToast(`Copied ${clipboardItems.length} item(s) to clipboard.`, 'success');
+            
+            pasteBtn.disabled = false;
+            pasteBtn.className = "p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.02] border border-white/5 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-100";
+            
+            renderFiles();
+            clearSelection();
+        };
+
+        window.deleteSelected = () => {
+            if (selectedItems.length === 0) return;
+            
+            pendingDeleteKey = "selected_items";
+            
+            const fileCount = selectedItems.filter(i => i.type === 'file').length;
+            const folderCount = selectedItems.filter(i => i.type === 'folder').length;
+            let msg = '';
+            if (fileCount > 0 && folderCount > 0) {
+                msg = `${fileCount} file(s) and ${folderCount} folder(s)`;
+            } else if (fileCount > 0) {
+                msg = `${fileCount} file(s)`;
+            } else {
+                msg = `${folderCount} folder(s)`;
+            }
+            
+            confirmModalFileName.textContent = `selected ${msg} and all of their contents`;
+            
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                confirmModal.classList.remove('opacity-0');
+                confirmModal.classList.add('opacity-100');
+                confirmModalCard.classList.remove('scale-95');
+                confirmModalCard.classList.add('scale-100');
+            }, 10);
+        };
+
+        window.pasteFile = async () => {
+            if (clipboardItems.length === 0) return;
+
+            try {
+                showToast(clipboardAction === 'cut' ? 'Moving items...' : 'Copying items...', 'info');
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const item of clipboardItems) {
+                    const filename = item.key.split('/').filter(Boolean).pop() + (item.type === 'folder' ? '/' : '');
+                    let newKey = currentPath + filename;
+
+                    if (newKey === item.key) {
+                        continue;
+                    }
+
+                    let finalNewKey = newKey;
+                    let suffixCounter = 1;
+                    while (allFiles.some(file => file.Key === finalNewKey)) {
+                        if (item.type === 'folder') {
+                            const folderNameRaw = filename.slice(0, -1);
+                            finalNewKey = currentPath + folderNameRaw + `_copy${suffixCounter}/`;
+                        } else {
+                            const parts = filename.split('.');
+                            if (parts.length > 1) {
+                                const ext = parts.pop();
+                                finalNewKey = currentPath + parts.join('.') + `_copy${suffixCounter}.` + ext;
+                            } else {
+                                finalNewKey = currentPath + filename + `_copy${suffixCounter}`;
+                            }
+                        }
+                        suffixCounter++;
+                    }
+
+                    try {
+                        if (item.type === 'file') {
+                            await s3.copyObject({
+                                Bucket: BUCKET_NAME,
+                                CopySource: getCopySource(BUCKET_NAME, item.key),
+                                Key: finalNewKey
+                            }).promise();
+
+                            if (clipboardAction === 'cut') {
+                                await s3.deleteObject({
+                                    Bucket: BUCKET_NAME,
+                                    Key: item.key
+                                }).promise();
+                            }
+                            successCount++;
+                        } else {
+                            const oldPrefix = item.key;
+                            const newPrefix = finalNewKey;
+                            const filesToMove = allFiles.filter(file => file.Key.startsWith(oldPrefix));
+
+                            for (let i = 0; i < filesToMove.length; i++) {
+                                const oldK = filesToMove[i].Key;
+                                const relativePart = oldK.substring(oldPrefix.length);
+                                const newK = newPrefix + relativePart;
+
+                                await s3.copyObject({
+                                    Bucket: BUCKET_NAME,
+                                    CopySource: getCopySource(BUCKET_NAME, oldK),
+                                    Key: newK
+                                }).promise();
+
+                                if (clipboardAction === 'cut') {
+                                    await s3.deleteObject({
+                                        Bucket: BUCKET_NAME,
+                                        Key: oldK
+                                    }).promise();
+                                }
+                            }
+                            successCount++;
+                        }
+                    } catch (err) {
+                        console.error(`Error pasting item ${item.key}:`, err);
+                        failCount++;
+                    }
+                }
+
+                if (successCount > 0) {
+                    showToast(clipboardAction === 'cut' ? `Moved ${successCount} item(s) successfully.` : `Copied ${successCount} item(s) successfully.`, 'success');
+                }
+                if (failCount > 0) {
+                    showToast(`Failed to paste ${failCount} item(s).`, 'error');
+                }
+
+                if (clipboardAction === 'cut') {
+                    clipboardItems = [];
+                    clipboardAction = null;
+                    clipboardFileKey = null;
+                    pasteBtn.disabled = true;
+                    pasteBtn.className = "p-2 rounded-lg text-indigo-400 hover:text-indigo-300 bg-white/[0.02] border border-white/5 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 opacity-45 cursor-not-allowed";
+                }
+
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error pasting:", error);
+                showToast('Failed to paste items.', 'error');
+            }
+        };
+
+        pasteBtn.addEventListener('click', window.pasteFile);
+
+        // ==========================================
+        // Create Folder Modal
+        // ==========================================
+        const createFolderModal = document.getElementById('createFolderModal');
+        const createFolderModalCard = document.getElementById('createFolderModalCard');
+        const folderNameInput = document.getElementById('folderNameInput');
+        const cancelCreateFolderBtn = document.getElementById('cancelCreateFolderBtn');
+        const confirmCreateFolderBtn = document.getElementById('confirmCreateFolderBtn');
+
+        window.promptNewFolder = () => {
+            folderNameInput.value = '';
+            createFolderModal.classList.remove('hidden');
+            setTimeout(() => {
+                createFolderModal.classList.remove('opacity-0');
+                createFolderModal.classList.add('opacity-100');
+                createFolderModalCard.classList.remove('scale-95');
+                createFolderModalCard.classList.add('scale-100');
+                folderNameInput.focus();
+            }, 10);
+        };
+
+        const closeCreateFolderModal = () => {
+            createFolderModal.classList.remove('opacity-100');
+            createFolderModal.classList.add('opacity-0');
+            createFolderModalCard.classList.remove('scale-100');
+            createFolderModalCard.classList.add('scale-95');
+            setTimeout(() => {
+                createFolderModal.classList.add('hidden');
+            }, 300);
+        };
+
+        cancelCreateFolderBtn.addEventListener('click', closeCreateFolderModal);
+        
+        createFolderModal.addEventListener('click', (e) => {
+            if (e.target === createFolderModal) closeCreateFolderModal();
+        });
+
+        confirmCreateFolderBtn.addEventListener('click', async () => {
+            const folderName = folderNameInput.value.trim();
+            if (!folderName) return;
+
+            if (folderName.includes('/')) {
+                showToast('Folder name cannot contain "/" character', 'error');
+                return;
+            }
+
+            const folderKey = currentPath + folderName + '/';
+
+            // Collision check: prevent overwriting existing folder
+            const folderExists = allFiles.some(file => file.Key === folderKey || file.Key.startsWith(folderKey));
+            if (folderExists) {
+                showToast(`Folder "${folderName}" already exists! Please choose another name.`, 'error');
+                return;
+            }
+
+            closeCreateFolderModal();
+
+            try {
+                showToast('Creating folder...', 'info');
+                
+                await s3.putObject({
+                    Bucket: BUCKET_NAME,
+                    Key: folderKey,
+                    Body: '',
+                    ContentType: 'application/x-directory'
+                }).promise();
+
+                showToast(`Folder "${folderName}" created successfully!`, 'success');
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error creating folder on R2:", error);
+                showToast('Failed to create folder.', 'error');
+            }
+        });
+
+        // ==========================================
+        // Rename operations
+        // ==========================================
+        const renameModal = document.getElementById('renameModal');
+        const renameModalCard = document.getElementById('renameModalCard');
+        const renameModalOldName = document.getElementById('renameModalOldName');
+        const renameNewNameInput = document.getElementById('renameNewNameInput');
+        const cancelRenameBtn = document.getElementById('cancelRenameBtn');
+        const confirmRenameBtn = document.getElementById('confirmRenameBtn');
+
+        window.openRenameModal = (fileKey) => {
+            pendingRenameKey = fileKey;
+            
+            const filename = fileKey.split('/').filter(Boolean).pop();
+            renameModalOldName.textContent = filename;
+            renameNewNameInput.value = filename;
+
+            renameModal.classList.remove('hidden');
+            setTimeout(() => {
+                renameModal.classList.remove('opacity-0');
+                renameModal.classList.add('opacity-100');
+                renameModalCard.classList.remove('scale-95');
+                renameModalCard.classList.add('scale-100');
+                renameNewNameInput.focus();
+            }, 10);
+        };
+
+        const closeRenameModal = () => {
+            renameModal.classList.remove('opacity-100');
+            renameModal.classList.add('opacity-0');
+            renameModalCard.classList.remove('scale-100');
+            renameModalCard.classList.add('scale-95');
+
+            setTimeout(() => {
+                renameModal.classList.add('hidden');
+                pendingRenameKey = null;
+            }, 300);
+        };
+
+        cancelRenameBtn.addEventListener('click', closeRenameModal);
+
+        renameModal.addEventListener('click', (e) => {
+            if (e.target === renameModal) closeRenameModal();
+        });
+
+        confirmRenameBtn.addEventListener('click', async () => {
+            const newFilename = renameNewNameInput.value.trim();
+            if (!newFilename || !pendingRenameKey) return;
+
+            if (newFilename.includes('/')) {
+                showToast('Name cannot contain "/" character', 'error');
+                return;
+            }
+            
+            const oldKey = pendingRenameKey;
+            
+            const pathParts = oldKey.split('/');
+            const isFolder = oldKey.endsWith('/');
+            if (isFolder) pathParts.pop(); 
+            
+            pathParts.pop(); 
+            const currentFolderPrefix = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
+            
+            const newKey = currentFolderPrefix + newFilename + (isFolder ? '/' : '');
+            
+            if (newKey === oldKey) {
+                closeRenameModal();
+                return;
+            }
+
+            // Collision check: prevent overwriting an existing file or folder
+            const alreadyExists = isFolder 
+                ? allFiles.some(file => file.Key === newKey || file.Key.startsWith(newKey))
+                : allFiles.some(file => file.Key === newKey);
+
+            if (alreadyExists) {
+                showToast(`File or folder "${newFilename}" already exists! Please choose another name to avoid overwriting.`, 'error');
+                return;
+            }
+
+            closeRenameModal();
+
+            try {
+                showToast('Renaming item...', 'info');
+
+                if (isFolder) {
+                    const filesToRename = allFiles.filter(file => file.Key.startsWith(oldKey));
+
+                    for (let i = 0; i < filesToRename.length; i++) {
+                        const oldK = filesToRename[i].Key;
+                        const relativePart = oldK.substring(oldKey.length);
+                        const newK = newKey + relativePart;
+
+                        await s3.copyObject({
+                            Bucket: BUCKET_NAME,
+                            CopySource: getCopySource(BUCKET_NAME, oldK),
+                            Key: newK
+                        }).promise();
+
+                        await s3.deleteObject({
+                            Bucket: BUCKET_NAME,
+                            Key: oldK
+                        }).promise();
+                    }
+                } else {
+                    await s3.copyObject({
+                        Bucket: BUCKET_NAME,
+                        CopySource: getCopySource(BUCKET_NAME, oldKey),
+                        Key: newKey
+                    }).promise();
+
+                    await s3.deleteObject({
+                        Bucket: BUCKET_NAME,
+                        Key: oldKey
+                    }).promise();
+                }
+
+                showToast('Renamed successfully!', 'success');
+                fetchFiles(true);
+            } catch (error) {
+                console.error("Error renaming on R2:", error);
+                showToast('Failed to rename.', 'error');
+            }
+        });
+
+        // ==========================================
+        // Copy pre-signed download link to clipboard
+        // ==========================================
+        window.copyDownloadLink = (fileKey) => {
+            try {
+                const signedUrl = s3.getSignedUrl('getObject', {
+                    Bucket: BUCKET_NAME,
+                    Key: fileKey,
+                    Expires: 86400 
+                });
+
+                navigator.clipboard.writeText(signedUrl).then(() => {
+                    showToast('Shareable download link (24h) copied to clipboard!', 'success');
+                }).catch(err => {
+                    const temp = document.createElement('input');
+                    temp.value = signedUrl;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    showToast('Shareable download link (24h) copied to clipboard!', 'success');
+                });
+            } catch (error) {
+                console.error("Error copying signed url:", error);
+                showToast('Failed to generate download link.', 'error');
+            }
+        };
+
+        // ==========================================
+        // Audio & Video player streams
+        // ==========================================
+        let currentMediaSignedUrl = '';
+        let currentMediaIsVideo = false;
+
+        window.playMedia = (fileKey) => {
+            const cleanKey = fileKey.split('?')[0].trim();
+            const ext = cleanKey.split('.').pop().toLowerCase().trim();
+            
+            const videoExts = ['mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', '3gp', 'flv', 'wmv', 'ts', 'ogv', 'm2ts', 'mp4v'];
+            const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'opus', 'wma', 'm4b', 'alac'];
+
+            const isVideo = videoExts.includes(ext);
+            const isAudio = audioExts.includes(ext);
+
+            if (!isVideo && !isAudio) {
+                showToast('File format not supported for streaming.', 'error');
+                return;
+            }
+
+            try {
+                const signedUrl = s3.getSignedUrl('getObject', {
+                    Bucket: BUCKET_NAME,
+                    Key: fileKey,
+                    Expires: 3600 
+                });
+
+                currentMediaSignedUrl = signedUrl;
+                currentMediaIsVideo = isVideo;
+
+                const filename = fileKey.split('/').filter(Boolean).pop();
+                document.getElementById('playerTitle').textContent = filename;
+
+                renderMediaScreen(isVideo, signedUrl);
+
+                const mediaPlayerModal = document.getElementById('mediaPlayerModal');
+                const mediaPlayerCard = document.getElementById('mediaPlayerCard');
+                
+                mediaPlayerModal.classList.remove('hidden');
+                setTimeout(() => {
+                    mediaPlayerModal.classList.remove('opacity-0');
+                    mediaPlayerModal.classList.add('opacity-100');
+                    mediaPlayerCard.classList.remove('scale-95');
+                    mediaPlayerCard.classList.add('scale-100');
+                }, 10);
+
+            } catch (error) {
+                console.error("Error setting up stream player:", error);
+                showToast('Failed to start media player.', 'error');
+            }
+        };
+
+        let plyrVideoInstance = null;
+        let plyrAudioInstance = null;
+
+        function initPlyrPlayers() {
+            if (typeof Plyr === 'undefined') return;
+
+            if (!plyrVideoInstance) {
+                plyrVideoInstance = new Plyr('#videoPlayer', {
+                    controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'fullscreen'],
+                    settings: ['speed', 'loop'],
+                    speed: { selected: playerSpeed, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+                });
+            }
+
+            if (!plyrAudioInstance) {
+                plyrAudioInstance = new Plyr('#audioPlayer', {
+                    controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings'],
+                    settings: ['speed', 'loop'],
+                    speed: { selected: playerSpeed, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+                });
+            }
+        }
+
+        function renderMediaScreen(isVideoMode, url) {
+            currentMediaIsVideo = isVideoMode;
+            initPlyrPlayers();
+
+            const playerTypeIcon = document.getElementById('playerTypeIcon');
+            const subtitle = document.getElementById('playerSubtitle');
+            const videoContainer = document.getElementById('videoPlayerContainer');
+            const audioContainer = document.getElementById('audioPlayerContainer');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const pipBtn = document.getElementById('playerPipBtn');
+            const modeToggleText = document.getElementById('playerModeToggleText');
+            const modeToggleBtn = document.getElementById('playerModeToggleBtn');
+
+            let currentTime = 0;
+            if (videoPlayer && videoPlayer.currentTime > 0) currentTime = videoPlayer.currentTime;
+            else if (audioPlayer && audioPlayer.currentTime > 0) currentTime = audioPlayer.currentTime;
+
+            if (plyrVideoInstance) plyrVideoInstance.stop();
+            if (plyrAudioInstance) plyrAudioInstance.stop();
+
+            videoContainer.classList.add('hidden');
+            audioContainer.classList.add('hidden');
+
+            if (isVideoMode) {
+                if (subtitle) subtitle.textContent = 'Streaming Video Player (Plyr Cinema Engine)';
+                if (playerTypeIcon) playerTypeIcon.innerHTML = '<i class="fas fa-video text-xs text-indigo-400"></i>';
+                if (modeToggleText) modeToggleText.textContent = 'Video';
+                if (modeToggleBtn) {
+                    modeToggleBtn.title = "Switch to Audio Only Mode";
+                    modeToggleBtn.className = "h-8 px-2.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-[11px] text-indigo-300 transition flex items-center justify-center gap-1.5 font-semibold";
+                    modeToggleBtn.innerHTML = '<i class="fas fa-video text-xs text-indigo-400"></i> <span>Video</span>';
+                }
+
+                videoContainer.classList.remove('hidden');
+
+                if (plyrVideoInstance) {
+                    plyrVideoInstance.source = {
+                        type: 'video',
+                        sources: [{ src: url, type: 'video/mp4' }]
+                    };
+                    if (currentTime > 0) plyrVideoInstance.currentTime = currentTime;
+                    plyrVideoInstance.play();
+                } else {
+                    videoPlayer.src = url;
+                    videoPlayer.playbackRate = playerSpeed;
+                    if (currentTime > 0) videoPlayer.currentTime = currentTime;
+                    videoPlayer.play().catch(e => console.log('Autoplay blocked.'));
+                }
+
+                if (pipBtn) {
+                    if (document.pictureInPictureEnabled) {
+                        pipBtn.classList.remove('hidden');
+                    } else {
+                        pipBtn.classList.add('hidden');
+                    }
+                }
+            } else {
+                if (subtitle) subtitle.textContent = 'Streaming Audio Player (Plyr Engine)';
+                if (playerTypeIcon) playerTypeIcon.innerHTML = '<i class="fas fa-music text-xs text-cyan-400"></i>';
+                if (modeToggleBtn) {
+                    modeToggleBtn.title = "Switch to Video Mode";
+                    modeToggleBtn.className = "h-8 px-2.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-[11px] text-cyan-300 transition flex items-center justify-center gap-1.5 font-semibold";
+                    modeToggleBtn.innerHTML = '<i class="fas fa-music text-xs text-cyan-400"></i> <span>Audio</span>';
+                }
+
+                audioContainer.classList.remove('hidden');
+
+                if (plyrAudioInstance) {
+                    plyrAudioInstance.source = {
+                        type: 'audio',
+                        sources: [{ src: url }]
+                    };
+                    if (currentTime > 0) plyrAudioInstance.currentTime = currentTime;
+                    plyrAudioInstance.play();
+                } else {
+                    audioPlayer.src = url;
+                    audioPlayer.playbackRate = playerSpeed;
+                    if (currentTime > 0) audioPlayer.currentTime = currentTime;
+                    audioPlayer.play().catch(e => console.log('Autoplay blocked.'));
+                }
+
+                if (pipBtn) pipBtn.classList.add('hidden');
+            }
+
+            const speedBtn = document.getElementById('playerSpeedBtn');
+            if (speedBtn) speedBtn.textContent = playerSpeed.toFixed(1) + 'x';
+            updateLoopUI();
+        }
+
+        window.togglePlayerMode = () => {
+            if (!currentMediaSignedUrl) return;
+            const newIsVideo = !currentMediaIsVideo;
+            renderMediaScreen(newIsVideo, currentMediaSignedUrl);
+            showToast(newIsVideo ? "Switched to Video Mode" : "Switched to Audio Mode", "info");
+        };
+
+        window.openMediaInNewTab = () => {
+            if (!currentMediaSignedUrl) return;
+            window.open(currentMediaSignedUrl, '_blank');
+            showToast('Opening media in new tab...', 'info');
+        };
+
+        window.closeMediaPlayer = () => {
+            const mediaPlayerModal = document.getElementById('mediaPlayerModal');
+            const mediaPlayerCard = document.getElementById('mediaPlayerCard');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const audioPlayer = document.getElementById('audioPlayer');
+
+            if (plyrVideoInstance) {
+                try { plyrVideoInstance.destroy(); } catch (e) {}
+                plyrVideoInstance = null;
+            }
+            if (plyrAudioInstance) {
+                try { plyrAudioInstance.destroy(); } catch (e) {}
+                plyrAudioInstance = null;
+            }
+
+            if (videoPlayer) {
+                videoPlayer.pause();
+                videoPlayer.src = '';
+            }
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.src = '';
+            }
+
+            mediaPlayerModal.classList.remove('opacity-100');
+            mediaPlayerModal.classList.add('opacity-0');
+            mediaPlayerCard.classList.remove('scale-100');
+            mediaPlayerCard.classList.add('scale-95');
+
+            // Reset minimization state when closed
+            isPlayerMinimized = false;
+            mediaPlayerModal.classList.remove('minimized');
+            mediaPlayerCard.classList.remove('minimized');
+            const minBtn = document.getElementById('playerMinimizeBtn');
+            if (minBtn) {
+                minBtn.innerHTML = '<i class="fas fa-compress-alt text-xs"></i>';
+                minBtn.title = "Minimize/Dock Player";
+            }
+
+            // Restore body scroll behavior if it was affected
+            document.body.style.overflow = '';
+
+            setTimeout(() => {
+                mediaPlayerModal.classList.add('hidden');
+            }, 100);
+        };
+
+        document.getElementById('mediaPlayerModal').addEventListener('click', (e) => {
+            // Only allow background clicking to close if the player is NOT minimized
+            if (!isPlayerMinimized && e.target === document.getElementById('mediaPlayerModal')) {
+                window.closeMediaPlayer();
+            }
+        });
+
+        // ==========================================
+        // Media player controls controllers
+        // ==========================================
+        window.togglePlayerLoop = () => {
+            isLoopEnabled = !isLoopEnabled;
+            localStorage.setItem('r2_player_loop', isLoopEnabled);
+            updateLoopUI();
+            showToast(isLoopEnabled ? "Repeat mode activated (Looping ON)" : "Repeat mode deactivated (Looping OFF)", "success");
+        };
+
+        function updateLoopUI() {
+            const loopBtn = document.getElementById('playerLoopBtn');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            if (videoPlayer) videoPlayer.loop = isLoopEnabled;
+            if (audioPlayer) audioPlayer.loop = isLoopEnabled;
+            
+            if (loopBtn) {
+                if (isLoopEnabled) {
+                    loopBtn.className = "w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/35 text-indigo-400 transition flex items-center justify-center shadow-lg shadow-indigo-500/10";
+                    loopBtn.title = "Repeat: ON";
+                } else {
+                    loopBtn.className = "w-8 h-8 rounded-lg bg-white/[0.02] border border-white/5 text-slate-400 hover:text-white transition flex items-center justify-center";
+                    loopBtn.title = "Repeat: OFF";
+                }
+            }
+        }
+
+        window.togglePlayerSpeed = () => {
+            const speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+            let idx = speeds.indexOf(playerSpeed);
+            if (idx === -1) idx = 0;
+            playerSpeed = speeds[(idx + 1) % speeds.length];
+
+            const videoPlayer = document.getElementById('videoPlayer');
+            const audioPlayer = document.getElementById('audioPlayer');
+            if (videoPlayer) videoPlayer.playbackRate = playerSpeed;
+            if (audioPlayer) audioPlayer.playbackRate = playerSpeed;
+
+            const speedBtn = document.getElementById('playerSpeedBtn');
+            if (speedBtn) {
+                speedBtn.textContent = playerSpeed.toFixed(1) + 'x';
+            }
+            showToast(`Playback speed set to ${playerSpeed}x`, "success");
+        };
+
+        window.togglePlayerPip = async () => {
+            const videoPlayer = document.getElementById('videoPlayer');
+            if (!videoPlayer || videoPlayer.paused || !document.pictureInPictureEnabled) {
+                showToast("Picture-in-Picture only available when playing videos", "warning");
+                return;
+            }
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await videoPlayer.requestPictureInPicture();
+                }
+            } catch (error) {
+                console.error("PiP error:", error);
+                showToast("Failed to launch Picture-in-Picture mode", "error");
+            }
+        };
+
+        window.togglePlayerMinimize = () => {
+            const modal = document.getElementById('mediaPlayerModal');
+            const card = document.getElementById('mediaPlayerCard');
+            const minBtn = document.getElementById('playerMinimizeBtn');
+            
+            isPlayerMinimized = !isPlayerMinimized;
+            
+            if (isPlayerMinimized) {
+                modal.classList.add('minimized');
+                card.classList.add('minimized');
+                minBtn.innerHTML = '<i class="fas fa-expand-alt text-xs"></i>';
+                minBtn.title = "Restore Player";
+                showToast("Player minimized to corner. You can now browse files while listening!", "success");
+            } else {
+                modal.classList.remove('minimized');
+                card.classList.remove('minimized');
+                minBtn.innerHTML = '<i class="fas fa-compress-alt text-xs"></i>';
+                minBtn.title = "Minimize/Dock Player";
+            }
+        };
+
+        // ==========================================
+        // PDF Reader logic
+        // ==========================================
+        window.viewPdf = (fileKey) => {
+            try {
+                const signedUrl = s3.getSignedUrl('getObject', {
+                    Bucket: BUCKET_NAME,
+                    Key: fileKey,
+                    Expires: 3600, 
+                    ResponseContentType: 'application/pdf',
+                    ResponseContentDisposition: 'inline'
+                });
+
+                pdfViewerTitle.textContent = fileKey.split('/').pop();
+                pdfFrame.src = signedUrl;
+
+                pdfViewerModal.classList.remove('hidden');
+                setTimeout(() => {
+                    pdfViewerModal.classList.remove('opacity-0');
+                    pdfViewerModal.classList.add('opacity-100');
+                    pdfViewerCard.classList.remove('scale-95');
+                    pdfViewerCard.classList.add('scale-100');
+                }, 10);
+            } catch (error) {
+                console.error("Error launching PDF viewer:", error);
+                showToast("Failed to open PDF reader.", "error");
+            }
+        };
+
+        window.closePdfViewer = () => {
+            pdfViewerModal.classList.remove('opacity-100');
+            pdfViewerModal.classList.add('opacity-0');
+            pdfViewerCard.classList.remove('scale-100');
+            pdfViewerCard.classList.add('scale-95');
+
+            setTimeout(() => {
+                pdfViewerModal.classList.add('hidden');
+                pdfFrame.src = ''; 
+            }, 300);
+        };
+
+        pdfViewerModal.addEventListener('click', (e) => {
+            if (e.target === pdfViewerModal) {
+                window.closePdfViewer();
+            }
+        });
+
+        // ==========================================
+        // Dropdown New menu handlers
+        // ==========================================
+        newDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = newDropdownMenu.classList.contains('hidden');
+            if (isHidden) {
+                newDropdownMenu.classList.remove('hidden');
+                setTimeout(() => {
+                    newDropdownMenu.classList.remove('scale-95', 'opacity-0');
+                    newDropdownMenu.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                closeNewDropdown();
+            }
+        });
+
+        function closeNewDropdown() {
+            newDropdownMenu.classList.remove('scale-100', 'opacity-100');
+            newDropdownMenu.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                newDropdownMenu.classList.add('hidden');
+            }, 200);
+        }
+
+        document.addEventListener('click', () => {
+            closeNewDropdown();
+        });
+
+        // ==========================================
+        // View toggle & search event mapping
+        // ==========================================
+        listViewBtn.addEventListener('click', () => {
+            currentView = 'list';
+            listViewBtn.className = "p-2 rounded-lg text-blue-455 text-blue-405 text-blue-400 bg-white/[0.04] text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8";
+            gridViewBtn.className = "p-2 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 bg-transparent";
+            renderFiles();
+        });
+
+        gridViewBtn.addEventListener('click', () => {
+            currentView = 'grid';
+            gridViewBtn.className = "p-2 rounded-lg text-blue-455 text-blue-455 text-blue-405 text-blue-400 bg-white/[0.04] text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8";
+            listViewBtn.className = "p-2 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-all duration-200 flex items-center justify-center w-8 h-8 bg-transparent";
+            renderFiles();
+        });
+
+
+        searchInput.addEventListener('input', renderFiles);
+
+        // ==========================================
+        // Mouse drag selection (Windows-like marquee)
+        // ==========================================
+        const explorerArea = document.getElementById('explorerArea');
+        const marquee = document.getElementById('selection-marquee');
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        explorerArea.addEventListener('mousedown', (e) => {
+            // Only left-click triggers selection marquee
+            if (e.button !== 0) return;
+
+            // Ignore interactive controls, action dropdowns, or selection checkboxes
+            if (e.target.closest('button, input, select, textarea, a, .action-menu-btn, .item-checkbox, #globalActionMenu')) {
+                return;
+            }
+
+            // Prevent marquee if starting directly on the draggable icon to allow normal drag-and-drop
+            if (e.target.closest('[draggable="true"]')) {
+                return;
+            }
+
+            isDragging = true;
+            const rect = explorerArea.getBoundingClientRect();
+            dragStartX = e.clientX - rect.left;
+            dragStartY = e.clientY - rect.top;
+
+            marquee.style.left = `${dragStartX}px`;
+            marquee.style.top = `${dragStartY}px`;
+            marquee.style.width = '0px';
+            marquee.style.height = '0px';
+
+            // Clear active selection on empty click unless holding Shift/Ctrl
+            if (!e.shiftKey && !e.ctrlKey) {
+                clearSelection();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            
+            // Prevent standard text/item drag behaviors on page background
+            e.preventDefault();
+        });
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+
+            const rect = explorerArea.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+
+            const left = Math.min(dragStartX, currentX);
+            const top = Math.min(dragStartY, currentY);
+            const width = Math.abs(dragStartX - currentX);
+            const height = Math.abs(dragStartY - currentY);
+
+            // Start showing box after minor movement threshold
+            if (width > 4 || height > 4) {
+                marqueeDragStarted = true; // Drag marquee selection active
+                marquee.classList.remove('hidden');
+                marquee.style.left = `${left}px`;
+                marquee.style.top = `${top}px`;
+                marquee.style.width = `${width}px`;
+                marquee.style.height = `${height}px`;
+
+                selectIntersectingItems(left, top, width, height, e.shiftKey || e.ctrlKey);
+            }
+        }
+
+        function onMouseUp(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            marquee.classList.add('hidden');
+
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            if (marqueeDragStarted) {
+                // Prevent click events from triggering right after dragging selection box
+                setTimeout(() => {
+                    marqueeDragStarted = false;
+                }, 50);
+            }
+        }
+
+        function selectIntersectingItems(boxLeft, boxTop, boxWidth, boxHeight, isAdditive) {
+            const boxRight = boxLeft + boxWidth;
+            const boxBottom = boxTop + boxHeight;
+            const areaRect = explorerArea.getBoundingClientRect();
+            
+            let newSelection = [];
+
+            const items = currentView === 'grid' 
+                ? fileGridBody.querySelectorAll('.group') 
+                : fileListBody.querySelectorAll('tr');
+
+            items.forEach(el => {
+                const cb = el.querySelector('.item-checkbox');
+                if (!cb) return;
+
+                const key = cb.getAttribute('data-key');
+                const type = cb.getAttribute('data-type');
+
+                const elRect = el.getBoundingClientRect();
+                const elLeft = elRect.left - areaRect.left;
+                const elTop = elRect.top - areaRect.top;
+                const elRight = elLeft + elRect.width;
+                const elBottom = elTop + elRect.height;
+
+                // Check intersection overlap (AABB)
+                const overlaps = !(boxLeft > elRight || 
+                                   boxRight < elLeft || 
+                                   boxTop > elBottom || 
+                                   boxBottom < elTop);
+
+                if (overlaps) {
+                    newSelection.push({ key, type });
+                }
+            });
+
+            if (isAdditive) {
+                // Shift/Ctrl key: Merge list
+                newSelection.forEach(item => {
+                    if (!selectedItems.some(si => si.key === item.key)) {
+                        selectedItems.push(item);
+                    }
+                });
+            } else {
+                selectedItems = [...newSelection];
+            }
+
+            updateSelectionUI();
+        }
+
+        // Initialize Sidebar and Looping Button styling on startup
+        updateSidebarUI();
+        updateLoopUI();
+
+        // Sync Audio Disc Vinyl Rotation animation with play/pause events
+        const audioEl = document.getElementById('audioPlayer');
+        const audioDiscEl = document.getElementById('audioPlayerDisc');
+        if (audioEl && audioDiscEl) {
+            audioEl.addEventListener('play', () => {
+                audioDiscEl.classList.add('animate-spin-vinyl');
+                audioDiscEl.classList.remove('animation-paused');
+            });
+            audioEl.addEventListener('pause', () => {
+                audioDiscEl.classList.add('animation-paused');
+            });
+            audioEl.addEventListener('ended', () => {
+                audioDiscEl.classList.remove('animate-spin-vinyl');
+                audioDiscEl.classList.remove('animation-paused');
+            });
+        }
+
+        // ==========================================
+        // App Version & Update System
+        // ==========================================
+        const APP_CURRENT_VERSION = "1.0.2";
+
+        function compareSemver(v1, v2) {
+            const p1 = v1.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+            const p2 = v2.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+            for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+                const num1 = p1[i] || 0;
+                const num2 = p2[i] || 0;
+                if (num1 > num2) return 1;
+                if (num1 < num2) return -1;
+            }
+            return 0;
+        }
+
+        window.checkForUpdates = async function(manual = true) {
+            const icon = document.getElementById('checkUpdateIcon');
+            if (icon) icon.classList.add('animate-spin');
+
+            try {
+                const res = await fetch('https://api.github.com/repos/Ayoubvvch/R2-Drive-APK/releases/latest', {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        if (manual) showToast('No releases found yet.', 'info');
+                        return;
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const release = await res.json();
+                const latestTag = release.tag_name || '';
+                const latestVersion = latestTag.replace(/^v/, '');
+
+                if (compareSemver(latestVersion, APP_CURRENT_VERSION) > 0) {
+                    const apkAsset = release.assets && release.assets.find(a => a.name.endsWith('.apk'));
+                    const downloadUrl = apkAsset ? apkAsset.browser_download_url : release.html_url;
+
+                    const title = document.getElementById('updateModalTitle');
+                    const subtitle = document.getElementById('updateModalSubtitle');
+                    const body = document.getElementById('updateModalBody');
+                    const downloadBtn = document.getElementById('updateDownloadBtn');
+                    const modal = document.getElementById('updateModal');
+                    const card = document.getElementById('updateModalCard');
+
+                    title.textContent = `Update Available (v${latestVersion})`;
+                    subtitle.textContent = `A newer version of R2 Drive is ready to install`;
+                    
+                    const changelog = (release.body || 'Performance enhancements and bug fixes.').replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
+                    body.innerHTML = `
+                        <div class="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl text-xs text-slate-300 max-h-48 overflow-y-auto font-sans leading-relaxed">
+                            ${changelog}
+                        </div>
+                    `;
+
+                    downloadBtn.href = downloadUrl;
+                    downloadBtn.setAttribute('download', apkAsset ? apkAsset.name : 'R2-Drive-update.apk');
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.remove('opacity-0');
+                        card.classList.remove('scale-95');
+                        card.classList.add('scale-100');
+                    }, 10);
+                } else {
+                    if (manual) {
+                        showToast(`You are on the latest version (v${APP_CURRENT_VERSION})`, 'success');
+                    }
+                }
+            } catch (err) {
+                console.error("Error checking for updates:", err);
+                if (manual) {
+                    showToast(`Update check failed: ${err.message}`, 'error');
+                }
+            } finally {
+                if (icon) icon.classList.remove('animate-spin');
+            }
+        };
+
+        window.closeUpdateModal = function() {
+            const modal = document.getElementById('updateModal');
+            const card = document.getElementById('updateModalCard');
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        // ==========================================
+        // Authentication & Vault Access Control
+        // ==========================================
+        window.showOwnerPasswordInput = function() {
+            document.getElementById('authStepQuestion').classList.add('hidden');
+            document.getElementById('authStepPublic').classList.add('hidden');
+            const stepPass = document.getElementById('authStepPassword');
+            stepPass.classList.remove('hidden');
+            const passInput = document.getElementById('ownerPasswordInput');
+            passInput.value = '';
+            document.getElementById('ownerPasswordError').classList.add('hidden');
+            setTimeout(() => passInput.focus(), 100);
+        };
+
+        window.showPublicR2Config = function() {
+            document.getElementById('authStepQuestion').classList.add('hidden');
+            document.getElementById('authStepPassword').classList.add('hidden');
+            document.getElementById('authStepPublic').classList.remove('hidden');
+        };
+
+        window.backToAuthQuestion = function() {
+            document.getElementById('authStepPassword').classList.add('hidden');
+            document.getElementById('authStepPublic').classList.add('hidden');
+            document.getElementById('authStepQuestion').classList.remove('hidden');
+        };
+
+        window.unlockOwnerVault = async function() {
+            const passInput = document.getElementById('ownerPasswordInput');
+            const errorText = document.getElementById('ownerPasswordError');
+            const unlockBtn = document.getElementById('unlockVaultBtn');
+            const password = passInput.value.trim();
+
+            if (!password) {
+                errorText.textContent = "Please enter your master password.";
+                errorText.classList.remove('hidden');
+                return;
+            }
+
+            unlockBtn.disabled = true;
+            unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Decrypting...';
+            errorText.classList.add('hidden');
+
+            try {
+                const creds = await decryptOwnerCredentials(password);
+                if (!creds || !creds.bucketName || !creds.accessKeyId) {
+                    throw new Error("Invalid credentials payload");
+                }
+
+                // Store credentials locally so prompt never appears again
+                localStorage.setItem('r2_credentials', JSON.stringify(creds));
+                localStorage.setItem('r2_is_owner', 'true');
+
+                // Close modal
+                document.getElementById('authModal').classList.add('hidden');
+
+                // Initialize client and fetch files
+                initR2Client(creds);
+                showToast('Owner vault unlocked successfully!', 'success');
+            } catch (err) {
+                console.error("Owner decryption failed:", err);
+                errorText.textContent = "Incorrect password. Access denied.";
+                errorText.classList.remove('hidden');
+                showToast('Invalid Owner Password!', 'error');
+            } finally {
+                unlockBtn.disabled = false;
+                unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock Vault';
+            }
+        };
+
+        window.savePublicR2Config = function() {
+            const endpoint = document.getElementById('publicEndpointInput').value.trim();
+            const bucketName = document.getElementById('publicBucketInput').value.trim();
+            const accessKeyId = document.getElementById('publicAccessKeyInput').value.trim();
+            const secretAccessKey = document.getElementById('publicSecretKeyInput').value.trim();
+
+            if (!endpoint || !bucketName || !accessKeyId || !secretAccessKey) {
+                showToast('Please fill in all Cloudflare R2 fields.', 'error');
+                return;
+            }
+
+            const creds = { endpoint, bucketName, accessKeyId, secretAccessKey };
+            localStorage.setItem('r2_credentials', JSON.stringify(creds));
+            localStorage.setItem('r2_is_owner', 'false');
+
+            document.getElementById('authModal').classList.add('hidden');
+            initR2Client(creds);
+            showToast('R2 connection configured successfully!', 'success');
+        };
+
+        window.resetVaultConfig = function() {
+            if (confirm("Disconnect and clear saved R2 credentials from this device? You will need to re-authenticate on next startup.")) {
+                localStorage.removeItem('r2_credentials');
+                localStorage.removeItem('r2_is_owner');
+                location.reload();
+            }
+        };
+
+        // ==========================================
+        // App Startup Initialization
+        // ==========================================
+        const savedVaultCreds = localStorage.getItem('r2_credentials');
+        if (savedVaultCreds) {
+            try {
+                const config = JSON.parse(savedVaultCreds);
+                document.getElementById('authModal').classList.add('hidden');
+                initR2Client(config);
+            } catch (e) {
+                console.error("Failed to parse saved credentials", e);
+                document.getElementById('authModal').classList.remove('hidden');
+            }
+        } else {
+            // First time launch: Prompt Owner verification
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        // Silent background update check after 3 seconds
+        setTimeout(() => {
+            window.checkForUpdates(false);
+        }, 3000);
+
+        // ==========================================
+        // Live Auto-Sync Background Polling Loop
+        // ==========================================
+        setInterval(() => {
+            // Only poll if tab is active and vault is initialized
+            if (!document.hidden && s3 && BUCKET_NAME) {
+                fetchFiles(true);
+            }
+        }, 8000);
+    </script>
+</body>
+</html>
