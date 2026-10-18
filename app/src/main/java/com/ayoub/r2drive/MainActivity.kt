@@ -22,6 +22,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = "${userAgentString} R2DriveNative/1.0.5 Mobile"
+            userAgentString = "${userAgentString} R2DriveNative/1.0.6 Mobile"
         }
 
         // Enable Hardware Acceleration on the WebView layer
@@ -158,10 +159,70 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 request: WebResourceRequest?
             ): WebResourceResponse? {
-                request?.url?.let { uri ->
-                    val intercepted = assetLoader.shouldInterceptRequest(uri)
-                    if (intercepted != null) return intercepted
+                val uri = request?.url ?: return super.shouldInterceptRequest(view, request)
+                val intercepted = assetLoader.shouldInterceptRequest(uri)
+                if (intercepted != null) return intercepted
+
+                val host = uri.host ?: ""
+                if (host.endsWith("r2.cloudflarestorage.com")) {
+                    val method = request.method ?: "GET"
+
+                    // Handle CORS Preflight (OPTIONS)
+                    if (method.equals("OPTIONS", ignoreCase = true)) {
+                        val corsHeaders = mutableMapOf(
+                            "Access-Control-Allow-Origin" to "*",
+                            "Access-Control-Allow-Methods" to "GET, POST, PUT, DELETE, HEAD, OPTIONS",
+                            "Access-Control-Allow-Headers" to "*",
+                            "Access-Control-Max-Age" to "86400"
+                        )
+                        return WebResourceResponse(
+                            "text/plain",
+                            "UTF-8",
+                            204,
+                            "No Content",
+                            corsHeaders,
+                            ByteArrayInputStream(ByteArray(0))
+                        )
+                    }
+
+                    // For root requests (like listBuckets: https://<account>.r2.cloudflarestorage.com/)
+                    // or if the request has no bucket path, proxy it with HttpURLConnection and inject CORS headers
+                    if (uri.path.isNullOrEmpty() || uri.path == "/") {
+                        try {
+                            val conn = URL(uri.toString()).openConnection() as HttpURLConnection
+                            conn.requestMethod = method
+                            conn.instanceFollowRedirects = true
+                            conn.connectTimeout = 15000
+                            conn.readTimeout = 20000
+
+                            request.requestHeaders?.forEach { (k, v) ->
+                                if (!k.equals("Host", ignoreCase = true)) {
+                                    conn.setRequestProperty(k, v)
+                                }
+                            }
+
+                            val statusCode = conn.responseCode
+                            val message = conn.responseMessage ?: "OK"
+                            val respHeaders = mutableMapOf<String, String>()
+                            conn.headerFields?.forEach { (k, vList) ->
+                                if (k != null && vList.isNotEmpty()) {
+                                    respHeaders[k] = vList.joinToString(", ")
+                                }
+                            }
+                            respHeaders["Access-Control-Allow-Origin"] = "*"
+                            respHeaders["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, HEAD, OPTIONS"
+                            respHeaders["Access-Control-Allow-Headers"] = "*"
+
+                            val stream = if (statusCode in 200..399) conn.inputStream else conn.errorStream
+                            val mimeType = conn.contentType?.split(";")?.get(0)?.trim() ?: "application/xml"
+
+                            return WebResourceResponse(mimeType, "UTF-8", statusCode, message, respHeaders, stream)
+                        } catch (e: Exception) {
+                            android.util.Log.e("R2Proxy", "Failed to proxy R2 request", e)
+                        }
+                    }
                 }
+
                 return super.shouldInterceptRequest(view, request)
             }
 
