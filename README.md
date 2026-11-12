@@ -12,18 +12,23 @@ A lightweight, high-performance Native Android application engineered to deliver
    - **Google Drive Floating Action Button (FAB `+`)**: Seamless BottomSheet to create folders, upload files, or upload entire directories.
    - **Google Drive File Actions Sheet**: Tap `⋮` on any file or folder to slide up the native action sheet (Download, Share Link, Rename, Cut, Copy, Delete).
    - **Bottom Navigation Bar**: Clean 3-tab navigation (`Files`, `Updates`, `Vault`).
-2. **In-App Live Update System (Check for Updates)**:
+2. **Android System Share Sheet Integration (Direct Upload from Any App)**:
+   - Share single or multiple files (images, videos, audio, PDFs, documents, APKs) or notes/links directly from any Android app into R2 Drive via Android's native Share menu (`ACTION_SEND` and `ACTION_SEND_MULTIPLE`).
+   - Shows an elegant upload confirmation modal indicating the target folder and file list with preview icons and sizes.
+   - Streams and uploads seamlessly to Cloudflare R2 with live progress tracking and automatic file refresh!
+3. **In-App Live Update System (Check for Updates)**:
    - When you tap **Check for Updates**, the update dialog appears with version notes.
+   - Fixed version detection loop: dynamic bridge ensures the installed APK version is always detected correctly.
    - Tapping **Download & Install** downloads the APK **directly inside the app** with a real-time progress bar (0% - 100%, MB / MB).
    - Once completed, it automatically launches Android's native package installer to update seamlessly in-place!
-3. **Ultra-Fast Instant Launch**:
+4. **Ultra-Fast Instant Launch**:
    - Assets are bundled locally and served via Google's `WebViewAssetLoader` from memory bus speeds.
    - Full hardware acceleration enabled (`hardwareAccelerated="true"`).
-4. **Permanent Keystore Signature**:
+5. **Permanent Keystore Signature**:
    - Signed with a persistent 2048-bit RSA key valid until **March 5, 2054**.
    - Supports **V1, V2, V3, and V4** APK signing schemes.
    - All future updates install over previous versions without signature conflicts or uninstalling.
-5. **Simplified 2-Key Auth, Dynamic Bucket Discovery & Photo Profiles**:
+6. **Simplified 2-Key Auth, Dynamic Bucket Discovery & Photo Profiles**:
    - **Only 2 Fields Required**: Just enter your **Access Key ID** and **Secret Access Key** (with Admin Read & Write access).
    - **Automatic Bucket Discovery**: Scans your Cloudflare R2 account via `s3.listBuckets()` and allows choosing any bucket as your Drive.
    - **Personal Photo Upload**: Upload your real profile picture directly from your device, rendered cleanly in the top Google Drive search bar.

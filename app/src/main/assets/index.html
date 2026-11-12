@@ -339,6 +339,46 @@
         </div>
     </div>
 
+    <!-- Shared Files Upload Modal -->
+    <div id="shareModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300 p-4">
+        <div class="bg-[#0e0e18] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl transform scale-95 transition-all duration-300 text-left" id="shareModalCard">
+            <!-- Modal Header -->
+            <div class="flex items-center gap-3 pb-3 border-b border-white/5">
+                <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-lg shrink-0">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-base font-bold text-white font-['Outfit'] truncate">Upload Shared Files</h3>
+                    <p class="text-xs text-indigo-400 font-semibold truncate" id="shareModalItemCount">Ready to upload</p>
+                </div>
+            </div>
+
+            <!-- Destination Folder Info -->
+            <div class="py-3">
+                <div class="flex items-center gap-2 p-2.5 bg-white/[0.03] border border-white/5 rounded-2xl text-xs text-slate-300">
+                    <i class="fas fa-folder text-amber-400 shrink-0"></i>
+                    <span class="text-slate-400">Target Folder:</span>
+                    <span class="font-bold text-white truncate" id="shareTargetFolder">/ (Root)</span>
+                </div>
+            </div>
+
+            <!-- Shared Files List -->
+            <div class="py-1">
+                <div class="p-2.5 bg-white/[0.02] border border-white/5 rounded-2xl text-xs text-slate-300 max-h-44 overflow-y-auto font-sans space-y-2 no-scrollbar" id="shareFilesList">
+                    <!-- Dynamic shared items injected here -->
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="flex justify-end gap-2.5 pt-4 border-t border-white/5" id="shareModalActions">
+                <button onclick="window.cancelSharedUpload()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition">Cancel</button>
+                <button onclick="window.confirmSharedUpload()" id="shareUploadBtn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Now
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Vault Authentication & Account Setup Modal (3 Stages) -->
     <div id="authModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-[#0e0e18] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-left max-h-[90vh] overflow-y-auto no-scrollbar" id="authModalCard">
@@ -585,12 +625,24 @@
         // ==========================================
         // App Version & In-App Update System
         // ==========================================
-        const APP_CURRENT_VERSION = "1.0.7";
+        const APP_CURRENT_VERSION = "1.1.0";
         let latestUpdateInfo = null;
 
+        function getInstalledVersion() {
+            if (window.AndroidUpdater && typeof window.AndroidUpdater.getAppVersion === 'function') {
+                try {
+                    const ver = window.AndroidUpdater.getAppVersion();
+                    if (ver) return ver;
+                } catch (e) {
+                    console.error("Error reading app version from bridge:", e);
+                }
+            }
+            return APP_CURRENT_VERSION;
+        }
+
         function compareSemver(v1, v2) {
-            const p1 = v1.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
-            const p2 = v2.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+            const p1 = (v1 || '').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+            const p2 = (v2 || '').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
             for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
                 const num1 = p1[i] || 0;
                 const num2 = p2[i] || 0;
@@ -620,8 +672,9 @@
                 const release = await res.json();
                 const latestTag = release.tag_name || '';
                 const latestVersion = latestTag.replace(/^v/, '');
+                const currentVer = getInstalledVersion();
 
-                if (compareSemver(latestVersion, APP_CURRENT_VERSION) > 0) {
+                if (compareSemver(latestVersion, currentVer) > 0) {
                     const apkAsset = release.assets && release.assets.find(a => a.name.endsWith('.apk'));
                     const downloadUrl = apkAsset ? apkAsset.browser_download_url : release.html_url;
 
@@ -653,7 +706,7 @@
                     }, 10);
                 } else {
                     if (manual) {
-                        showToast(`You are on the latest version (v${APP_CURRENT_VERSION})`, 'success');
+                        showToast(`You are on the latest version (v${currentVer})`, 'success');
                     }
                 }
             } catch (err) {
@@ -823,6 +876,13 @@
 
             updateUserProfileUI();
             fetchFiles();
+
+            // Check for pending shared files from Android Share Sheet
+            setTimeout(() => {
+                if (window.checkPendingSharedFiles) {
+                    window.checkPendingSharedFiles();
+                }
+            }, 500);
         }
 
         // ==========================================
@@ -2224,6 +2284,146 @@
             fetchFiles();
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ==========================================
+        // Android Share Sheet Receiver & Upload
+        // ==========================================
+        let pendingSharedItems = [];
+
+        window.checkPendingSharedFiles = function() {
+            if (!window.AndroidShare || typeof window.AndroidShare.getPendingSharedFiles !== 'function') {
+                return;
+            }
+            try {
+                const raw = window.AndroidShare.getPendingSharedFiles();
+                if (!raw) return;
+                const items = JSON.parse(raw);
+                if (Array.isArray(items) && items.length > 0) {
+                    pendingSharedItems = items;
+                    // If not authenticated yet, let user know and wait
+                    if (!s3 || !BUCKET_NAME) {
+                        showToast(`Received ${items.length} shared file(s). Please sign in to upload.`, 'info');
+                        return;
+                    }
+                    window.showShareModal(items);
+                }
+            } catch (e) {
+                console.error("Error reading shared files from Android bridge:", e);
+            }
+        };
+
+        window.showShareModal = function(items) {
+            if (!items || items.length === 0) return;
+            pendingSharedItems = items;
+
+            const modal = document.getElementById('shareModal');
+            const card = document.getElementById('shareModalCard');
+            const countEl = document.getElementById('shareModalItemCount');
+            const targetEl = document.getElementById('shareTargetFolder');
+            const listEl = document.getElementById('shareFilesList');
+
+            if (countEl) countEl.textContent = `${items.length} item${items.length > 1 ? 's' : ''} ready`;
+            if (targetEl) targetEl.textContent = currentPath ? `/${currentPath}` : '/ (Root)';
+
+            if (listEl) {
+                listEl.innerHTML = items.map(item => {
+                    const sizeStr = formatBytes(item.size);
+                    const iconMeta = getFileIcon(item.name);
+                    const iconClass = (iconMeta && iconMeta.icon) ? iconMeta.icon : 'fa-file';
+                    const iconColor = (iconMeta && iconMeta.color) ? iconMeta.color : 'text-indigo-400';
+                    return `
+                        <div class="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                                <i class="fas ${iconClass} ${iconColor} text-xs"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(item.name)}</p>
+                                <p class="text-[10px] text-slate-400 font-mono">${sizeStr}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        };
+
+        window.closeShareModal = function() {
+            const modal = document.getElementById('shareModal');
+            const card = document.getElementById('shareModalCard');
+            if (card) {
+                card.classList.remove('scale-100');
+                card.classList.add('scale-95');
+            }
+            if (modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        };
+
+        window.cancelSharedUpload = function() {
+            window.closeShareModal();
+            pendingSharedItems = [];
+            if (window.AndroidShare && typeof window.AndroidShare.clearSharedFiles === 'function') {
+                window.AndroidShare.clearSharedFiles();
+            }
+            showToast('Shared upload cancelled', 'info');
+        };
+
+        window.confirmSharedUpload = async function() {
+            if (!pendingSharedItems || pendingSharedItems.length === 0) {
+                window.closeShareModal();
+                return;
+            }
+            if (!s3 || !BUCKET_NAME) {
+                showToast('Please sign in to R2 Drive first.', 'error');
+                return;
+            }
+
+            const itemsToUpload = [...pendingSharedItems];
+            window.closeShareModal();
+            pendingSharedItems = [];
+
+            showToast(`Loading ${itemsToUpload.length} shared file(s)...`, 'info');
+
+            const files = [];
+            for (const item of itemsToUpload) {
+                try {
+                    const res = await fetch(`https://appassets.androidplatform.net/shared-stream/${item.id}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    const file = new File([blob], item.name, { type: item.mimeType || blob.type || 'application/octet-stream' });
+                    files.push(file);
+                } catch (err) {
+                    console.error("Error reading shared file stream:", item.name, err);
+                    showToast(`Failed to load ${item.name}: ${err.message}`, 'error');
+                }
+            }
+
+            if (files.length > 0) {
+                await enqueueUploads(files, false);
+                if (window.AndroidShare && typeof window.AndroidShare.clearSharedFiles === 'function') {
+                    window.AndroidShare.clearSharedFiles();
+                }
+            }
+        };
+
         // Toast Helper
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
@@ -2256,6 +2456,13 @@
             // First time launch: show Sign In / Sign Up modal
             document.getElementById('authModal').classList.remove('hidden');
         }
+
+        // Check for shared files on initial startup if opened via Share Sheet
+        setTimeout(() => {
+            if (window.checkPendingSharedFiles) {
+                window.checkPendingSharedFiles();
+            }
+        }, 1000);
 
         // Silent background update check after 3 seconds
         setTimeout(() => {

@@ -11,8 +11,10 @@ android {
         applicationId = "com.ayoub.r2drive"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.0.7"
+        val propVersionName = project.findProperty("versionName") as? String ?: "1.1.0"
+        val propVersionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 11
+        versionCode = propVersionCode
+        versionName = propVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

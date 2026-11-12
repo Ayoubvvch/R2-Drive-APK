@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
@@ -22,14 +24,28 @@ import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.CopyOnWriteArrayList
 
 class MainActivity : AppCompatActivity() {
+
+    data class SharedFileItem(
+        val id: String,
+        val name: String,
+        val size: Long,
+        val mimeType: String,
+        val file: File
+    )
+
+    private val pendingSharedFiles = CopyOnWriteArrayList<SharedFileItem>()
 
     private lateinit var rootLayout: FrameLayout
     private lateinit var webView: WebView
@@ -75,6 +91,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        cleanStagedFiles()
 
         // Setup dark status bar and navigation bar
         setupWindowDecorations()
@@ -111,6 +128,13 @@ class MainActivity : AppCompatActivity() {
 
         setupWebView()
         setupBackNavigation()
+        handleSendIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent?.let { handleSendIntent(it) }
     }
 
     private fun setupWindowDecorations() {
@@ -145,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = "${userAgentString} R2DriveNative/1.0.7 Mobile"
+            userAgentString = "${userAgentString} R2DriveNative/${getInstalledAppVersion()} Mobile"
         }
 
         // Enable Hardware Acceleration on the WebView layer
@@ -154,7 +178,17 @@ class MainActivity : AppCompatActivity() {
         // Register In-App Updater JavaScript Interface
         webView.addJavascriptInterface(AndroidUpdaterBridge(), "AndroidUpdater")
 
+        // Register Share Sheet Receiver JavaScript Interface
+        webView.addJavascriptInterface(AndroidShareBridge(), "AndroidShare")
+
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (pendingSharedFiles.isNotEmpty()) {
+                    notifySharedFilesReady()
+                }
+            }
+
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest?
@@ -162,6 +196,34 @@ class MainActivity : AppCompatActivity() {
                 val uri = request?.url ?: return super.shouldInterceptRequest(view, request)
                 val intercepted = assetLoader.shouldInterceptRequest(uri)
                 if (intercepted != null) return intercepted
+
+                // Intercept shared file stream requests: https://appassets.androidplatform.net/shared-stream/{fileId}
+                if (uri.authority == "appassets.androidplatform.net" && uri.path?.startsWith("/shared-stream/") == true) {
+                    val fileId = uri.lastPathSegment ?: ""
+                    val sharedItem = pendingSharedFiles.find { it.id == fileId }
+                    if (sharedItem != null && sharedItem.file.exists()) {
+                        try {
+                            val stream = FileInputStream(sharedItem.file)
+                            val headers = mapOf(
+                                "Access-Control-Allow-Origin" to "*",
+                                "Access-Control-Allow-Methods" to "GET, OPTIONS",
+                                "Content-Type" to sharedItem.mimeType,
+                                "Content-Length" to sharedItem.file.length().toString(),
+                                "Cache-Control" to "no-cache"
+                            )
+                            return WebResourceResponse(
+                                sharedItem.mimeType,
+                                "UTF-8",
+                                200,
+                                "OK",
+                                headers,
+                                stream
+                            )
+                        } catch (e: Exception) {
+                            android.util.Log.e("R2ShareStream", "Error opening stream for $fileId", e)
+                        }
+                    }
+                }
 
                 val host = uri.host ?: ""
                 if (host.endsWith("r2.cloudflarestorage.com")) {
@@ -351,13 +413,225 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    // ==========================================
+    // Android Share Sheet Handling
+    // ==========================================
+    private fun handleSendIntent(intent: Intent) {
+        val action = intent.action ?: return
+        if (action != Intent.ACTION_SEND && action != Intent.ACTION_SEND_MULTIPLE) return
+
+        Thread {
+            try {
+                val stagingDir = File(cacheDir, "shared_staging").apply {
+                    if (!exists()) mkdirs()
+                }
+
+                val itemsToAdd = mutableListOf<SharedFileItem>()
+                val uris = mutableListOf<Uri>()
+
+                intent.clipData?.let { clipData ->
+                    for (i in 0 until clipData.itemCount) {
+                        val u = clipData.getItemAt(i).uri
+                        if (u != null && !uris.contains(u)) {
+                            uris.add(u)
+                        }
+                    }
+                }
+
+                if (uris.isEmpty()) {
+                    if (action == Intent.ACTION_SEND) {
+                        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                        }
+                        uri?.let { uris.add(it) }
+                    } else if (action == Intent.ACTION_SEND_MULTIPLE) {
+                        val streamList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+                        }
+                        streamList?.let { uris.addAll(it) }
+                    }
+                }
+
+                if (uris.isNotEmpty()) {
+                    for (uri in uris) {
+                        val fileItem = stageUri(uri, stagingDir)
+                        if (fileItem != null) {
+                            itemsToAdd.add(fileItem)
+                        }
+                    }
+                } else if (intent.hasExtra(Intent.EXTRA_TEXT)) {
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    if (!text.isNullOrBlank()) {
+                        val timeStr = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                        val fileName = "Shared_Note_${timeStr}.txt"
+                        val id = "share_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
+                        val targetFile = File(stagingDir, "${id}_${fileName}")
+                        targetFile.writeText(text, Charsets.UTF_8)
+                        itemsToAdd.add(
+                            SharedFileItem(
+                                id = id,
+                                name = fileName,
+                                size = targetFile.length(),
+                                mimeType = "text/plain",
+                                file = targetFile
+                            )
+                        )
+                    }
+                }
+
+                if (itemsToAdd.isNotEmpty()) {
+                    pendingSharedFiles.addAll(itemsToAdd)
+                    runOnUiThread {
+                        notifySharedFilesReady()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("R2DriveShare", "Failed to process shared content", e)
+            }
+        }.start()
+    }
+
+    private fun stageUri(uri: Uri, stagingDir: File): SharedFileItem? {
+        return try {
+            val fileName = queryFileName(uri)
+            val mimeType = queryMimeType(uri, fileName)
+            val id = "share_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
+            val safeName = fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val targetFile = File(stagingDir, "${id}_${safeName}")
+
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(targetFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            if (targetFile.exists() && targetFile.length() > 0) {
+                SharedFileItem(
+                    id = id,
+                    name = fileName,
+                    size = targetFile.length(),
+                    mimeType = mimeType,
+                    file = targetFile
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("R2DriveShare", "Failed to stage uri: $uri", e)
+            null
+        }
+    }
+
+    private fun queryFileName(uri: Uri): String {
+        var name: String? = null
+        if (uri.scheme == "content") {
+            try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index != -1 && cursor.moveToFirst()) {
+                        name = cursor.getString(index)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore fallback
+            }
+        }
+        if (name.isNullOrBlank()) {
+            name = uri.lastPathSegment
+        }
+        if (name.isNullOrBlank()) {
+            name = "shared_file_${System.currentTimeMillis()}"
+        }
+        return name!!
+    }
+
+    private fun queryMimeType(uri: Uri, fileName: String): String {
+        var mime = contentResolver.getType(uri)
+        if (mime.isNullOrBlank()) {
+            val ext = MimeTypeMap.getFileExtensionFromUrl(fileName)
+            if (!ext.isNullOrBlank()) {
+                mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.lowercase())
+            }
+        }
+        return mime ?: "application/octet-stream"
+    }
+
+    private fun notifySharedFilesReady() {
+        if (pendingSharedFiles.isNotEmpty()) {
+            webView.evaluateJavascript(
+                "if (window.checkPendingSharedFiles) { window.checkPendingSharedFiles(); }",
+                null
+            )
+        }
+    }
+
+    private fun cleanStagedFiles() {
+        pendingSharedFiles.clear()
+        try {
+            val stagingDir = File(cacheDir, "shared_staging")
+            if (stagingDir.exists()) {
+                stagingDir.listFiles()?.forEach { it.delete() }
+            }
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    // Share Sheet JavaScript Interface
+    inner class AndroidShareBridge {
+        @JavascriptInterface
+        fun getPendingSharedFiles(): String {
+            val arr = JSONArray()
+            for (item in pendingSharedFiles) {
+                val obj = JSONObject().apply {
+                    put("id", item.id)
+                    put("name", item.name)
+                    put("size", item.size)
+                    put("mimeType", item.mimeType)
+                }
+                arr.put(obj)
+            }
+            return arr.toString()
+        }
+
+        @JavascriptInterface
+        fun clearSharedFiles() {
+            cleanStagedFiles()
+        }
+    }
+
     // In-App APK Downloader and Installer
     inner class AndroidUpdaterBridge {
+        @JavascriptInterface
+        fun getAppVersion(): String {
+            return getInstalledAppVersion()
+        }
+
         @JavascriptInterface
         fun startDownloadAndInstall(apkUrl: String, versionName: String) {
             runOnUiThread {
                 downloadAndInstallUpdate(apkUrl, versionName)
             }
+        }
+    }
+
+    private fun getInstalledAppVersion(): String {
+        return try {
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+            pInfo.versionName ?: "1.1.0"
+        } catch (e: Exception) {
+            "1.1.0"
         }
     }
 
@@ -497,6 +771,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        cleanStagedFiles()
         webView.destroy()
         super.onDestroy()
     }
